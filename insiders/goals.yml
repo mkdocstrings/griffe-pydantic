@@ -1,7 +1,0 @@
-goals:
-  1000:
-    name: GraviFridge User Manual
-    features:
-    - name: "[Project] Griffe extension for Pydantic"
-      ref: /
-      since: 2023/07/13
