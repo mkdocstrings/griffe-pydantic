@@ -1,2 +1,0 @@
-* [<code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> griffe_pydantic](griffe_pydantic/index.md)
-    * [<code class="doc-symbol doc-symbol-nav doc-symbol-module"></code> extension](griffe_pydantic/extension.md)
