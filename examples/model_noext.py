@@ -19,7 +19,7 @@ class ExampleModel(BaseModel):
         default=5, ge=0, le=100, description="Shows constraints within doc string."
     )
 
-    @field_validator("field_with_validator_and_alias", "field_without_default")
+    @field_validator("field_with_validator_and_alias", "field_without_default", mode="before")
     @classmethod
     def check_max_length_ten(cls, v) -> str:
         """Show corresponding field with link/anchor."""
