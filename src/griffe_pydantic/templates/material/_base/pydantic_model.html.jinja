@@ -1,0 +1,65 @@
+{% extends "_base/class.html.jinja" %}
+
+{% block contents %}
+  {% block bases %}{{ super() }}{% endblock %}
+  {% block docstring %}{{ super() }}{% endblock %}
+
+  {% block schema scoped %}
+    {% if class.extra.griffe_pydantic.schema %}
+      <details><summary>Show JSON schema:</summary>
+        {{ class.extra.griffe_pydantic.schema | highlight(language="json") }}
+      </details>
+    {% endif %}
+  {% endblock schema %}
+    
+  {% block config scoped %}
+    {% if class.extra.griffe_pydantic.config %}
+      <p>Config:</p>
+      <ul>
+        {% for name, value in class.extra.griffe_pydantic.config.items() %}
+          <li><code>{{ name }}</code>: {{ value|highlight(language="python", inline=True) }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endblock config %}
+
+  {% block fields scoped %}
+    {% with fields = class.extra.griffe_pydantic.fields() %}
+      {% if fields %}
+        <p>Fields:</p>
+        <ul>
+          {% for name, field in fields.items() %}
+            <li>
+              <code><span data-autorefs-optional-hover="{{ field.path }}">{{ name }}</span></code>
+              {% with expression = field.annotation %}
+                (<code>{% include "expression.html.jinja" with context %}</code>)
+              {% endwith %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  {% endblock fields %}
+
+  {% block validators scoped %}
+    {% with validators = class.extra.griffe_pydantic.validators() %}
+      {% if validators %}
+        <p>Validators:</p>
+        <ul>
+          {% for name, validator in validators.items() %}
+            <li>
+              <code><span data-autorefs-optional-hover="{{ validator.path }}">{{ name }}</span></code> &rarr;
+              {% for target in validator.extra.griffe_pydantic.targets %}
+                <code><span data-autorefs-optional-hover="{{ target.path }}">{{ target.name }}</span></code>
+                {%- if not loop.last %}, {% endif %}
+              {% endfor %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+  {% endblock validators %}
+
+  {% block source %}{{ super() }}{% endblock %}
+  {% block children %}{{ super() }}{% endblock %}
+{% endblock contents %}

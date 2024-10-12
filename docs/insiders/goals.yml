@@ -1,0 +1,16 @@
+goals:
+  500:
+    name: PlasmaVac User Guide
+    features: []
+  1000:
+    name: GraviFridge Fluid Renewal
+    features:
+    - name: "[Project] Griffe extension for Pydantic"
+      ref: /
+      since: 2023/07/13
+  1500:
+    name: HyperLamp Navigation Tips
+    features: []
+  2000:
+    name: FusionDrive Ejection Configuration
+    features: []
