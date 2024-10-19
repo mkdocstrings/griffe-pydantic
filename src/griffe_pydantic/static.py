@@ -8,8 +8,10 @@ from typing import TYPE_CHECKING
 
 from griffe import (
     Alias,
+    AliasResolutionError,
     Attribute,
     Class,
+    CyclicAliasError,
     Docstring,
     Expr,
     ExprCall,
@@ -17,6 +19,7 @@ from griffe import (
     ExprName,
     Function,
     Module,
+    Object,
     dynamic_import,
     get_logger,
 )
@@ -28,6 +31,17 @@ if TYPE_CHECKING:
 
 
 logger = get_logger(__name__)
+
+
+def _resolve_alias(alias: Alias) -> Object | None:
+    """Resolve an alias to its target, or ``None`` if not resolved."""
+    try:
+        target = alias.target
+    except (AliasResolutionError, CyclicAliasError):
+        return None
+    if isinstance(target, Alias):
+        return _resolve_alias(target)
+    return target
 
 
 def inherits_pydantic(cls: Class) -> bool:
@@ -142,6 +156,9 @@ def process_class(cls: Class, *, processed: set[str], schema: bool = False) -> N
         cls.extra[common.self_namespace]["schema"] = common.json_schema(true_class)
 
     for member in cls.all_members.values():
+        if isinstance(member, Alias) and (member := _resolve_alias(member)) is None:
+            logger.warning(f"cannot yet process {member}")
+            continue
         if isinstance(member, Attribute):
             process_attribute(member, cls, processed=processed)
         elif isinstance(member, Function):
