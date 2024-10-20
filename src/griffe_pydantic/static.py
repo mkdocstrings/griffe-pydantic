@@ -156,9 +156,12 @@ def process_class(cls: Class, *, processed: set[str], schema: bool = False) -> N
         cls.extra[common.self_namespace]["schema"] = common.json_schema(true_class)
 
     for member in cls.all_members.values():
-        if isinstance(member, Alias) and (member := _resolve_alias(member)) is None:
-            logger.warning(f"cannot yet process {member}")
-            continue
+        if isinstance(member, Alias):
+            resolved = _resolve_alias(member)
+            if resolved is None:
+                logger.warning(f"cannot yet process {member}")
+                continue
+            member = resolved
         if isinstance(member, Attribute):
             process_attribute(member, cls, processed=processed)
         elif isinstance(member, Function):
