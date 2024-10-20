@@ -161,7 +161,7 @@ def process_class(cls: Class, *, processed: set[str], schema: bool = False) -> N
             if resolved is None:
                 logger.warning(f"cannot yet process {member}")
                 continue
-            member = resolved
+            member = resolved  # noqa: PLW2901
         if isinstance(member, Attribute):
             process_attribute(member, cls, processed=processed)
         elif isinstance(member, Function):
