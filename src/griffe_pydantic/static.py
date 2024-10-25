@@ -19,7 +19,6 @@ from griffe import (
     ExprName,
     Function,
     Module,
-    Object,
     dynamic_import,
     get_logger,
 )
@@ -31,17 +30,6 @@ if TYPE_CHECKING:
 
 
 logger = get_logger(__name__)
-
-
-def _resolve_alias(alias: Alias) -> Object | None:
-    """Resolve an alias to its target, or ``None`` if not resolved."""
-    try:
-        target = alias.target
-    except (AliasResolutionError, CyclicAliasError):
-        return None
-    if isinstance(target, Alias):
-        return _resolve_alias(target)
-    return target
 
 
 def inherits_pydantic(cls: Class) -> bool:
@@ -120,10 +108,6 @@ def process_function(func: Function, cls: Class, *, processed: set[str]) -> None
         return
     processed.add(func.canonical_path)
 
-    if isinstance(func, Alias):
-        logger.warning(f"cannot yet process {func}")
-        return
-
     if decorator := pydantic_field_validator(func):
         fields = [ast.literal_eval(field) for field in decorator.arguments if isinstance(field, str)]
         common.process_function(func, cls, fields)
@@ -157,11 +141,11 @@ def process_class(cls: Class, *, processed: set[str], schema: bool = False) -> N
 
     for member in cls.all_members.values():
         if isinstance(member, Alias):
-            resolved = _resolve_alias(member)
-            if resolved is None:
+            try:
+                member = member.final_target  # noqa: PLW2901
+            except (AliasResolutionError, CyclicAliasError):
                 logger.warning(f"cannot yet process {member}")
                 continue
-            member = resolved  # noqa: PLW2901
         if isinstance(member, Attribute):
             process_attribute(member, cls, processed=processed)
         elif isinstance(member, Function):
