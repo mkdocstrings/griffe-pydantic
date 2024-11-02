@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import ast
 import sys
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 from griffe import (
     Alias,
@@ -63,11 +63,13 @@ def pydantic_field_validator(func: Function) -> ExprCall | None:
     return None
 
 
-def process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> None:
+def process_attribute(attr: Attribute | Alias, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic fields."""
     if attr.canonical_path in processed:
         return
     processed.add(attr.canonical_path)
+    if isinstance(attr, Alias):
+        attr = cast(Attribute, attr.final_target)
 
     kwargs = {}
     if isinstance(attr.value, ExprCall):
@@ -87,6 +89,7 @@ def process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> No
         kwargs["default"] = attr.value
 
     if attr.name == "model_config":
+        kwargs.pop("ignored_types", None)  # Ignored types cannot be serialized yet.
         cls.extra[common.self_namespace]["config"] = kwargs
         return
 
@@ -141,14 +144,12 @@ def process_class(cls: Class, *, processed: set[str], schema: bool = False) -> N
             return
         cls.extra[common.self_namespace]["schema"] = common.json_schema(true_class)
 
-    for member in cls.all_members.values():
-        if isinstance(member, Attribute):
-            process_attribute(member, cls, processed=processed)
-        elif isinstance(member, Function):
-            process_function(member, cls, processed=processed)
-        elif isinstance(member, Class):
-            process_class(member, processed=processed, schema=schema)
-
+    for attr in cls.attributes.values():
+        process_attribute(attr, cls, processed=processed)
+    for func in cls.functions.values():
+        process_function(func, cls, processed=processed)
+    for cls in cls.classes.values():
+        process_class(cls, processed=processed, schema=schema)
 
 def process_module(
     mod: Module,
