@@ -3,7 +3,6 @@
 [![ci](https://github.com/mkdocstrings/griffe-pydantic/workflows/ci/badge.svg)](https://github.com/mkdocstrings/griffe-pydantic/actions?query=workflow%3Aci)
 [![documentation](https://img.shields.io/badge/docs-mkdocs-708FCC.svg?style=flat)](https://mkdocstrings.github.io/griffe-pydantic/)
 [![pypi version](https://img.shields.io/pypi/v/griffe-pydantic.svg)](https://pypi.org/project/griffe-pydantic/)
-[![gitpod](https://img.shields.io/badge/gitpod-workspace-708FCC.svg?style=flat)](https://gitpod.io/#https://github.com/mkdocstrings/griffe-pydantic)
 [![gitter](https://badges.gitter.im/join%20chat.svg)](https://app.gitter.im/#/room/#griffe-pydantic:gitter.im)
 
 [Griffe](https://mkdocstrings.github.io/griffe/) extension for [Pydantic](https://github.com/pydantic/pydantic).
