@@ -162,7 +162,9 @@ def process_module(
     processed.add(mod.canonical_path)
 
     for cls in mod.classes.values():
-        process_class(cls, processed=processed, schema=schema)
+        # Don't process aliases, real classes will be processed at some point anyway.
+        if not cls.is_alias:
+            process_class(cls, processed=processed, schema=schema)
 
     for submodule in mod.modules.values():
         process_module(submodule, processed=processed, schema=schema)
