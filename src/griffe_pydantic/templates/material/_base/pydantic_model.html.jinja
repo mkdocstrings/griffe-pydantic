@@ -17,7 +17,7 @@
       <p>Config:</p>
       <ul>
         {% for name, value in class.extra.griffe_pydantic.config.items() %}
-          <li><code>{{ name }}</code>: {{ value|highlight(language="python", inline=True) }}</li>
+          <li><code>{{ name }}</code>: {{ value|string|highlight(language="python", inline=True) }}</li>
         {% endfor %}
       </ul>
     {% endif %}
