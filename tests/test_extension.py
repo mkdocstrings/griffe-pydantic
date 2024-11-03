@@ -70,3 +70,18 @@ def test_extension() -> None:
 
         schema = package.classes["ExampleModel"].extra["griffe_pydantic"]["schema"]
         assert schema.startswith('{\n  "description"')
+
+
+
+def test_imported_models() -> None:
+    """Test the extension with imported models."""
+    with temporary_visited_package(
+        "package",
+        modules={
+            "__init__.py": "from ._private import MyModel\n\n__all__ = ['MyModel']",
+            "_private.py": "from pydantic import BaseModel\n\nclass MyModel(BaseModel):\n    field1: str\n    '''Some field.'''\n",
+        },
+        extensions=Extensions(PydanticExtension(schema=True)),
+    ) as package:
+        assert package["MyModel"].labels == {"pydantic-model"}
+        assert package["MyModel.field1"].labels == {"pydantic-field"}

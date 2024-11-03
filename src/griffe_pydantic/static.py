@@ -140,12 +140,6 @@ def process_class(cls: Class, *, processed: set[str], schema: bool = False) -> N
         cls.extra[common.self_namespace]["schema"] = common.json_schema(true_class)
 
     for member in cls.all_members.values():
-        if isinstance(member, Alias):
-            try:
-                member = member.final_target  # noqa: PLW2901
-            except (AliasResolutionError, CyclicAliasError):
-                logger.warning(f"cannot yet process {member}")
-                continue
         if isinstance(member, Attribute):
             process_attribute(member, cls, processed=processed)
         elif isinstance(member, Function):
@@ -166,7 +160,8 @@ def process_module(
     processed.add(mod.canonical_path)
 
     for cls in mod.classes.values():
-        process_class(cls, processed=processed, schema=schema)
+        if not cls.is_alias:
+            process_class(cls, processed=processed, schema=schema)
 
     for submodule in mod.modules.values():
         process_module(submodule, processed=processed, schema=schema)
