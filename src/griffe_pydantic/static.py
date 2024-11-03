@@ -7,6 +7,7 @@ import sys
 from typing import TYPE_CHECKING
 
 from griffe import (
+    Alias,
     Attribute,
     Class,
     Docstring,
@@ -104,6 +105,10 @@ def process_function(func: Function, cls: Class, *, processed: set[str]) -> None
     if func.canonical_path in processed:
         return
     processed.add(func.canonical_path)
+
+    if isinstance(func, Alias):
+        logger.warning(f"cannot yet process {func}")
+        return
 
     if decorator := pydantic_field_validator(func):
         fields = [ast.literal_eval(field) for field in decorator.arguments if isinstance(field, str)]
