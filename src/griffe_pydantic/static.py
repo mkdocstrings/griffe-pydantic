@@ -7,11 +7,8 @@ import sys
 from typing import TYPE_CHECKING
 
 from griffe import (
-    Alias,
-    AliasResolutionError,
     Attribute,
     Class,
-    CyclicAliasError,
     Docstring,
     Expr,
     ExprCall,

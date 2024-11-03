@@ -72,7 +72,6 @@ def test_extension() -> None:
         assert schema.startswith('{\n  "description"')
 
 
-
 def test_imported_models() -> None:
     """Test the extension with imported models."""
     with temporary_visited_package(
