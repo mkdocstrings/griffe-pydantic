@@ -30,7 +30,7 @@
         <ul>
           {% for name, field in fields.items() %}
             <li>
-              <code><span data-autorefs-optional-hover="{{ field.path }}">{{ name }}</span></code>
+              <code><autoref optional hover identifier="{{ field.path }}">{{ name }}</autoref></code>
               {% with expression = field.annotation %}
                 (<code>{% include "expression.html.jinja" with context %}</code>)
               {% endwith %}
@@ -48,9 +48,9 @@
         <ul>
           {% for name, validator in validators.items() %}
             <li>
-              <code><span data-autorefs-optional-hover="{{ validator.path }}">{{ name }}</span></code> &rarr;
+              <code><autoref optional hover identifier="{{ validator.path }}">{{ name }}</autoref></code> &rarr;
               {% for target in validator.extra.griffe_pydantic.targets %}
-                <code><span data-autorefs-optional-hover="{{ target.path }}">{{ target.name }}</span></code>
+                <code><autoref optional hover identifier="{{ target.path }}">{{ target.name }}</autoref></code>
                 {%- if not loop.last %}, {% endif %}
               {% endfor %}
             </li>
