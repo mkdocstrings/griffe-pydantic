@@ -48,7 +48,7 @@ def inherits_pydantic(cls: Class) -> bool:
     return any(inherits_pydantic(parent_class) for parent_class in cls.mro())
 
 
-def pydantic_field_validator(func: Function) -> ExprCall | None:
+def pydantic_validator(func: Function) -> ExprCall | None:
     """Return a function's `pydantic.field_validator` decorator if it exists.
 
     Parameters:
@@ -58,7 +58,7 @@ def pydantic_field_validator(func: Function) -> ExprCall | None:
         A decorator value (Griffe expression).
     """
     for decorator in func.decorators:
-        if isinstance(decorator.value, ExprCall) and decorator.callable_path == "pydantic.field_validator":
+        if isinstance(decorator.value, ExprCall) and decorator.callable_path in {"pydantic.field_validator", "pydantic.model_validator"}:
             return decorator.value
     return None
 
@@ -110,7 +110,7 @@ def process_function(func: Function, cls: Class, *, processed: set[str]) -> None
         logger.warning(f"cannot yet process {func}")
         return
 
-    if decorator := pydantic_field_validator(func):
+    if decorator := pydantic_validator(func):
         fields = [ast.literal_eval(field) for field in decorator.arguments if isinstance(field, str)]
         common.process_function(func, cls, fields)
 

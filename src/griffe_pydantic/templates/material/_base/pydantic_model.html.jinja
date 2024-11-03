@@ -48,11 +48,14 @@
         <ul>
           {% for name, validator in validators.items() %}
             <li>
-              <code><autoref optional hover identifier="{{ validator.path }}">{{ name }}</autoref></code> &rarr;
-              {% for target in validator.extra.griffe_pydantic.targets %}
-                <code><autoref optional hover identifier="{{ target.path }}">{{ target.name }}</autoref></code>
-                {%- if not loop.last %}, {% endif %}
-              {% endfor %}
+              <code><autoref optional hover identifier="{{ validator.path }}">{{ name }}</autoref></code>
+              {% if validator.extra.griffe_pydantic.targets %}
+                &rarr;
+                {% for target in validator.extra.griffe_pydantic.targets %}
+                  <code><autoref optional hover identifier="{{ target.path }}">{{ target.name }}</autoref></code>
+                  {%- if not loop.last %}, {% endif %}
+                {% endfor %}
+              {% endif %}
             </li>
           {% endfor %}
         </ul>

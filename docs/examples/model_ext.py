@@ -1,4 +1,5 @@
-from pydantic import field_validator, ConfigDict, BaseModel, Field
+from typing import Any
+from pydantic import field_validator, model_validator, ConfigDict, BaseModel, Field
 
 
 class ExampleModel(BaseModel):
@@ -26,3 +27,11 @@ class ExampleModel(BaseModel):
         if len(v) >= 10:
             raise ValueError("No more than 10 characters allowed")
         return v
+
+    @model_validator(mode="before")
+    @classmethod
+    def lowercase_only(cls, data: dict[str, Any]) -> dict[str, Any]:
+        """Ensure that the field without a default is lowercase."""
+        if isinstance(data.get("field_without_default"), str):
+            data["field_without_default"] = data["field_without_default"].lower()
+        return data
