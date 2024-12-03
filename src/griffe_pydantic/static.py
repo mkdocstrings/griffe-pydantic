@@ -58,7 +58,10 @@ def pydantic_validator(func: Function) -> ExprCall | None:
         A decorator value (Griffe expression).
     """
     for decorator in func.decorators:
-        if isinstance(decorator.value, ExprCall) and decorator.callable_path in {"pydantic.field_validator", "pydantic.model_validator"}:
+        if isinstance(decorator.value, ExprCall) and decorator.callable_path in {
+            "pydantic.field_validator",
+            "pydantic.model_validator",
+        }:
             return decorator.value
     return None
 
