@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
+import pytest
 from griffe import Extensions, temporary_visited_package
 
 from griffe_pydantic.extension import PydanticExtension
@@ -120,3 +122,27 @@ def test_rendering_model_config_using_configdict(python_handler: PythonHandler) 
         extensions=Extensions(PydanticExtension(schema=False)),
     ) as package:
         python_handler.render(package["Model"], {})  # Assert no errors.
+
+
+def test_not_crashing_on_dynamic_field_description(caplog: pytest.LogCaptureFixture) -> None:
+    """Test the extension with dynamic field description."""
+    code = """
+    import pydantic
+
+    desc = "xyz"
+
+    class TestModel(pydantic.BaseModel):
+        abc: str = pydantic.Field(description=desc)
+    """
+    with (
+        caplog.at_level(logging.DEBUG),
+        temporary_visited_package(
+            "package",
+            modules={"__init__.py": code},
+            extensions=Extensions(PydanticExtension(schema=False)),
+        ),
+    ):
+        assert any(
+            record.levelname == "DEBUG" and "field 'package.TestModel.abc' as literal" in record.message
+            for record in caplog.records
+        )

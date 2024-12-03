@@ -97,7 +97,10 @@ def process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> No
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (docstring := kwargs.get("description", None)):
-        attr.docstring = Docstring(ast.literal_eval(docstring), parent=attr)  # type: ignore[arg-type]
+        try:
+            attr.docstring = Docstring(ast.literal_eval(docstring), parent=attr)  # type: ignore[arg-type]
+        except ValueError:
+            logger.debug(f"Could not parse description of field '{attr.path}' as literal, skipping")
 
 
 def process_function(func: Function, cls: Class, *, processed: set[str]) -> None:
