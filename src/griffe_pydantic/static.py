@@ -93,7 +93,10 @@ def process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> No
         cls.extra[common.self_namespace]["config"] = kwargs
         return
 
-    attr.labels = {"pydantic-field"}
+    # If attr.labels is ONLY "class-attribute", then it is ClassVar
+    # otherwise attr.label == {"class-attribute", "instance-attribute"}
+    attr.labels = {"pydantic-field"} if {"class-attribute"} != attr.labels else {"pydantic-classvar"}
+
     attr.value = kwargs.get("default", None)
     constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description"}}
     attr.extra[common.self_namespace]["constraints"] = constraints

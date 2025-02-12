@@ -42,8 +42,8 @@ Discussions = "https://github.com/mkdocstrings/griffe-pydantic/discussions"
 Gitter = "https://gitter.im/mkdocstrings/griffe-pydantic"
 Funding = "https://github.com/sponsors/pawamoy"
 
-[project.entry-points."mkdocstrings.python.templates"] 
-griffe-pydantic = "griffe_pydantic:get_templates_path" 
+[project.entry-points."mkdocstrings.python.templates"]
+griffe-pydantic = "griffe_pydantic:get_templates_path"
 
 [tool.pdm]
 version = {source = "scm"}

@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-import pytest
 from griffe import Extensions, temporary_visited_package
 
 from griffe_pydantic.extension import PydanticExtension
 
 if TYPE_CHECKING:
+    import pytest
     from mkdocstrings_handlers.python.handler import PythonHandler
 
 
