@@ -15,4 +15,4 @@ def get_templates_path() -> Path:
     return Path(__file__).parent / "templates"
 
 
-__all__: list[str] = ["get_templates_path", "PydanticExtension"]
+__all__: list[str] = ["PydanticExtension", "get_templates_path"]
