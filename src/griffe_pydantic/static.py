@@ -72,6 +72,11 @@ def process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> No
         return
     processed.add(attr.canonical_path)
 
+    # Presence of `class-attribute` label and absence of `instance-attribute` label
+    # indicates that the attribute is annotated with `ClassVar` and should be ignored.
+    if "class-attribute" in attr.labels and "instance-attribute" not in attr.labels:
+        return
+
     kwargs = {}
     if isinstance(attr.value, ExprCall):
         kwargs = {
@@ -93,9 +98,8 @@ def process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> No
         cls.extra[common.self_namespace]["config"] = kwargs
         return
 
-    # If attr.labels is ONLY "class-attribute", then it is ClassVar
-    # otherwise attr.label == {"class-attribute", "instance-attribute"}
-    attr.labels = {"pydantic-field"} if {"class-attribute"} != attr.labels else {"pydantic-classvar"}
+    attr.labels.add("pydantic-field")
+    attr.labels.remove("instance-attribute")
 
     attr.value = kwargs.get("default", None)
     constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description"}}
