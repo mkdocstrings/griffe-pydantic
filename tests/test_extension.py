@@ -121,7 +121,7 @@ def test_rendering_model_config_using_configdict(python_handler: PythonHandler) 
         modules={"__init__.py": code},
         extensions=Extensions(PydanticExtension(schema=False)),
     ) as package:
-        python_handler.render(package["Model"], {})  # Assert no errors.
+        python_handler.render(package["Model"], python_handler.get_options({}))  # Assert no errors.
 
 
 def test_not_crashing_on_dynamic_field_description(caplog: pytest.LogCaptureFixture) -> None:
