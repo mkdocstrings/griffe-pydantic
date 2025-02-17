@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.1.1](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.1) - 2025-02-17
+
+<small>[Compare with 1.1.0](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.0...1.1.1)</small>
+
+### Bug Fixes
+
+- Don't label `ClassVar`-annotated attributes as Pydantic fields ([0dbf958](https://github.com/mkdocstrings/griffe-pydantic/commit/0dbf958775ed488bda7f975ab3e3aadf4c71786b) by Miradil Zeynalli). [Issue-18](https://github.com/mkdocstrings/griffe-pydantic/issues/18), [PR-25](https://github.com/mkdocstrings/griffe-pydantic/pull/25), Co-authored-by: Timothée Mazzucotelli <dev@pawamoy.fr>
+- Don't crash when trying to evaluate AST literals (field descriptions) ([b41bf46](https://github.com/mkdocstrings/griffe-pydantic/commit/b41bf463c44b9ed0b6cf6a7f10cb41d89477c926) by Timothée Mazzucotelli). [Issue-16](https://github.com/mkdocstrings/griffe-pydantic/issues/16)
+
 ## [1.1.0](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.0) - 2024-11-03
 
 <small>[Compare with 1.0.0](https://github.com/mkdocstrings/griffe-pydantic/compare/1.0.0...1.1.0)</small>
