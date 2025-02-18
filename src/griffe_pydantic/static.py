@@ -99,7 +99,8 @@ def process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> No
         return
 
     attr.labels.add("pydantic-field")
-    attr.labels.remove("instance-attribute")
+    attr.labels.discard("class-attribute")
+    attr.labels.discard("instance-attribute")
 
     attr.value = kwargs.get("default", None)
     constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description"}}

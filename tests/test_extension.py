@@ -146,3 +146,22 @@ def test_not_crashing_on_dynamic_field_description(caplog: pytest.LogCaptureFixt
             record.levelname == "DEBUG" and "field 'package.TestModel.abc' as literal" in record.message
             for record in caplog.records
         )
+
+
+def test_ignore_classvars() -> None:
+    """Test the extension ignores class variables."""
+    code = """
+    from pydantic import BaseModel
+    from typing import ClassVar
+
+    class Model(BaseModel):
+        field: str
+        class_var: ClassVar[int] = 1
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False)),
+    ) as package:
+        assert "pydantic-field" not in package["Model.class_var"].labels
+        assert "class-attribute" in package["Model.class_var"].labels
