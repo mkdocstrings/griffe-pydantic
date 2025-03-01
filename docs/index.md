@@ -43,3 +43,4 @@ print('--8<-- "docs/examples/model_ext.py"')
       - griffe_pydantic
 
 ///
+
