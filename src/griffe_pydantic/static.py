@@ -16,6 +16,7 @@ from griffe import (
     ExprKeyword,
     ExprName,
     Function,
+    Kind,
     Module,
     dynamic_import,
     get_logger,
@@ -156,12 +157,13 @@ def process_class(cls: Class, *, processed: set[str], schema: bool = False) -> N
         cls.extra[common.self_namespace]["schema"] = common.json_schema(true_class)
 
     for member in cls.all_members.values():
-        if isinstance(member, Attribute):
-            process_attribute(member, cls, processed=processed)
-        elif isinstance(member, Function):
-            process_function(member, cls, processed=processed)
-        elif isinstance(member, Class):
-            process_class(member, processed=processed, schema=schema)
+        kind = member.kind
+        if kind is Kind.ATTRIBUTE:
+            process_attribute(member, cls, processed=processed)  # type: ignore[arg-type]
+        elif kind is Kind.FUNCTION:
+            process_function(member, cls, processed=processed)  # type: ignore[arg-type]
+        elif kind is Kind.CLASS:
+            process_class(member, processed=processed, schema=schema)  # type: ignore[arg-type]
 
 
 def process_module(
