@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from griffe_pydantic.extension import PydanticExtension
+from griffe_pydantic._internal.extension import PydanticExtension
 
 
 def get_templates_path() -> Path:

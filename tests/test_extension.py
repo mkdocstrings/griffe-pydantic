@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import pytest
 from griffe import Extensions, temporary_inspected_package, temporary_visited_package
 
-from griffe_pydantic.extension import PydanticExtension
+from griffe_pydantic._internal.extension import PydanticExtension
 
 if TYPE_CHECKING:
     from mkdocstrings_handlers.python.handler import PythonHandler
