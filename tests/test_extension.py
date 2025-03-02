@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from griffe import Extensions, temporary_visited_package
+import pytest
+from griffe import Extensions, temporary_inspected_package, temporary_visited_package
 
 from griffe_pydantic.extension import PydanticExtension
 
 if TYPE_CHECKING:
-    import pytest
     from mkdocstrings_handlers.python.handler import PythonHandler
 
 
@@ -58,9 +58,11 @@ code = """
 """
 
 
-def test_extension() -> None:
+@pytest.mark.parametrize("analysis", ["static", "dynamic"])
+def test_extension(analysis: str) -> None:
     """Test the extension."""
-    with temporary_visited_package(
+    loader = {"static": temporary_visited_package, "dynamic": temporary_inspected_package}[analysis]
+    with loader(
         "package",
         modules={"__init__.py": code},
         extensions=Extensions(PydanticExtension(schema=True)),
@@ -74,7 +76,7 @@ def test_extension() -> None:
         assert package.classes["ExampleModel"].labels == {"pydantic-model"}
 
         config = package.classes["ExampleModel"].extra["griffe_pydantic"]["config"]
-        assert config == {"frozen": "False"}
+        assert config == {"frozen": False}
 
         schema = package.classes["ExampleModel"].extra["griffe_pydantic"]["schema"]
         assert schema.startswith('{\n  "description"')

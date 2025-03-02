@@ -96,7 +96,16 @@ def process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> No
         kwargs["default"] = attr.value
 
     if attr.name == "model_config":
-        cls.extra[common.self_namespace]["config"] = kwargs
+        config = {}
+        for key, value in kwargs.items():
+            if isinstance(value, str):
+                try:
+                    config[key] = ast.literal_eval(value)
+                except ValueError:
+                    config[key] = value
+            else:
+                config[key] = value
+        cls.extra[common.self_namespace]["config"] = config
         return
 
     attr.labels.add("pydantic-field")

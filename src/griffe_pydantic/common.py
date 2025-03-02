@@ -31,11 +31,11 @@ field_constraints = {
 
 
 def _model_fields(cls: Class) -> dict[str, Attribute]:
-    return {name: attr for name, attr in cls.members.items() if "pydantic-field" in attr.labels}  # type: ignore[misc]
+    return {name: attr for name, attr in cls.all_members.items() if "pydantic-field" in attr.labels}  # type: ignore[misc]
 
 
 def _model_validators(cls: Class) -> dict[str, Function]:
-    return {name: func for name, func in cls.members.items() if "pydantic-validator" in func.labels}  # type: ignore[misc]
+    return {name: func for name, func in cls.all_members.items() if "pydantic-validator" in func.labels}  # type: ignore[misc]
 
 
 def json_schema(model: type[BaseModel]) -> str:
@@ -69,7 +69,7 @@ def process_function(func: Function, cls: Class, fields: Sequence[str]) -> None:
         cls: A Griffe function representing the Pydantic validator.
     """
     func.labels = {"pydantic-validator"}
-    targets = [cls.members[field] for field in fields]
+    targets = [cls.all_members[field] for field in fields]
 
     func.extra[self_namespace].setdefault("targets", [])
     func.extra[self_namespace]["targets"].extend(targets)

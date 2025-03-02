@@ -2,54 +2,65 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any, Callable
 
 from griffe import (
     Attribute,
     Class,
     Docstring,
     Function,
+    Kind,
     get_logger,
 )
 from pydantic.fields import FieldInfo
 
 from griffe_pydantic import common
 
-if TYPE_CHECKING:
-    from griffe import ObjectNode
-
 logger = get_logger(__name__)
 
 
-def process_attribute(node: ObjectNode, attr: Attribute, cls: Class) -> None:
+def process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic fields."""
+    if attr.canonical_path in processed:
+        return
+    processed.add(attr.canonical_path)
     if attr.name == "model_config":
-        cls.extra[common.self_namespace]["config"] = node.obj
+        cls.extra[common.self_namespace]["config"] = obj
         return
 
-    if not isinstance(node.obj, FieldInfo):
+    if not isinstance(obj, FieldInfo):
         return
 
     attr.labels = {"pydantic-field"}
-    attr.value = node.obj.default
+    attr.value = obj.default
     constraints = {}
     for constraint in common.field_constraints:
-        if (value := getattr(node.obj, constraint, None)) is not None:
+        if (value := getattr(obj, constraint, None)) is not None:
             constraints[constraint] = value
     attr.extra[common.self_namespace]["constraints"] = constraints
 
     # Populate docstring from the field's `description` argument.
-    if not attr.docstring and (docstring := node.obj.description):
+    if not attr.docstring and (docstring := obj.description):
         attr.docstring = Docstring(docstring, parent=attr)
 
 
-def process_function(node: ObjectNode, func: Function, cls: Class) -> None:
+def process_function(obj: Callable, func: Function, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic field validators."""
-    if dec_info := getattr(node.obj, "decorator_info", None):
+    if func.canonical_path in processed:
+        return
+    processed.add(func.canonical_path)
+    if dec_info := getattr(obj, "decorator_info", None):
         common.process_function(func, cls, dec_info.fields)
 
 
-def process_class(node: ObjectNode, cls: Class) -> None:
+def process_class(obj: type, cls: Class, *, processed: set[str], schema: bool = False) -> None:
     """Detect and prepare Pydantic models."""
     common.process_class(cls)
-    cls.extra[common.self_namespace]["schema"] = common.json_schema(node.obj)
+    if schema:
+        cls.extra[common.self_namespace]["schema"] = common.json_schema(obj)
+    for member in cls.all_members.values():
+        kind = member.kind
+        if kind is Kind.ATTRIBUTE:
+            process_attribute(getattr(obj, member.name), member, cls, processed=processed)  # type: ignore[arg-type]
+        elif kind is Kind.FUNCTION:
+            process_function(getattr(obj, member.name), member, cls, processed=processed)  # type: ignore[arg-type]
