@@ -67,7 +67,10 @@ def _process_function(func: Function, cls: Class, fields: Sequence[str]) -> None
         cls: A Griffe function representing the Pydantic validator.
     """
     func.labels = {"pydantic-validator"}
-    targets = [cls.all_members[field] for field in fields]
+    if fields and fields[0] == "*":
+        targets = [member for member in cls.all_members.values() if "pydantic-field" in member.labels]
+    else:
+        targets = [cls.all_members[field] for field in fields]
 
     func.extra[_self_namespace].setdefault("targets", [])
     func.extra[_self_namespace]["targets"].extend(targets)

@@ -167,3 +167,28 @@ def test_ignore_classvars() -> None:
     ) as package:
         assert "pydantic-field" not in package["Model.class_var"].labels
         assert "class-attribute" in package["Model.class_var"].labels
+
+
+def test_wildcard_field_validator() -> None:
+    """Test field validator that works on all fields."""
+    code = """
+    from pydantic import BaseModel, field_validator
+
+    class Schema(BaseModel):
+        a: int
+        b: int
+
+        @field_validator('*', mode='before')
+        @classmethod
+        def set_if_none(cls, v: Any, info):
+            ...
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False)),
+    ) as package:
+        validator = package["Schema.set_if_none"]
+        assert validator.labels == {"pydantic-validator"}
+        assert validator in package["Schema.a"].extra["griffe_pydantic"]["validators"]
+        assert validator in package["Schema.b"].extra["griffe_pydantic"]["validators"]
