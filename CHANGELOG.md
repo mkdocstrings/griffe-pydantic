@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.1.3](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.3) - 2025-03-20
+
+<small>[Compare with 1.1.2](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.2...1.1.3)</small>
+
+### Bug Fixes
+
+- Handle field validators targetting all fields with `"*"` ([449487f](https://github.com/mkdocstrings/griffe-pydantic/commit/449487faf7bd28f49daf0721c607c5f762831a4b) by Timothée Mazzucotelli). [Issue-22](https://github.com/mkdocstrings/griffe-pydantic/issues/22)
+- Handle inherited fields ([c41a776](https://github.com/mkdocstrings/griffe-pydantic/commit/c41a776f63b60b4cf2a964b19b7ef0545f0b7872) by Timothée Mazzucotelli). [Issue-17](https://github.com/mkdocstrings/griffe-pydantic/issues/17)
+
+### Code Refactoring
+
+- Move code to internal API, update docs accordingly ([2f37b7e](https://github.com/mkdocstrings/griffe-pydantic/commit/2f37b7e3810498a632467a23999a7a69d05a84d6) by Timothée Mazzucotelli).
+- Run dynamic analysis once package is loaded ([6e3ab4f](https://github.com/mkdocstrings/griffe-pydantic/commit/6e3ab4fcd6e758d1c7c8851a2b60780206bca137) by Timothée Mazzucotelli). [Issue-19](https://github.com/mkdocstrings/griffe-pydantic/issues/19)
+
 ## [1.1.2](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.2) - 2025-02-18
 
 <small>[Compare with 1.1.1](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.1...1.1.2)</small>
