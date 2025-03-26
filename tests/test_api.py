@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 
 import griffe
 import pytest
-from mkdocstrings.inventory import Inventory
+from mkdocstrings import Inventory
 
 import griffe_pydantic
 
