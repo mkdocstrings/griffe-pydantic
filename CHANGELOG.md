@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.1.4](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.4) - 2025-03-26
+
+<small>[Compare with 1.1.3](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.3...1.1.4)</small>
+
+### Bug Fixes
+
+- Don't process properties as fields ([2977b21](https://github.com/mkdocstrings/griffe-pydantic/commit/2977b2100c979998fa303292071ce7ad26edcb95) by Timothée Mazzucotelli). [Issue-29](https://github.com/mkdocstrings/griffe-pydantic/issues/29)
+
 ## [1.1.3](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.3) - 2025-03-20
 
 <small>[Compare with 1.1.2](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.2...1.1.3)</small>
