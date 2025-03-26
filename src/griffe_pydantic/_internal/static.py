@@ -71,6 +71,10 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
         return
     processed.add(attr.canonical_path)
 
+    # Properties are not fields.
+    if "property" in attr.labels:
+        return
+
     # Presence of `class-attribute` label and absence of `instance-attribute` label
     # indicates that the attribute is annotated with `ClassVar` and should be ignored.
     if "class-attribute" in attr.labels and "instance-attribute" not in attr.labels:

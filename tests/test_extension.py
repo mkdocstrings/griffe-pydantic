@@ -192,3 +192,43 @@ def test_wildcard_field_validator() -> None:
         assert validator.labels == {"pydantic-validator"}
         assert validator in package["Schema.a"].extra["griffe_pydantic"]["validators"]
         assert validator in package["Schema.b"].extra["griffe_pydantic"]["validators"]
+
+
+def test_ignoring_properties() -> None:
+    """Properties are not fields and must be ignored."""
+    code = """
+    from pydantic import BaseModel, field
+
+    class Base(BaseModel):
+        @property
+        def a(self) -> int:
+            return 0
+
+    class Model(Base):
+        b: int = field(default=1)
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False)),
+    ) as package:
+        assert "pydantic-field" not in package["Model.a"].labels
+
+
+def test_process_non_model_base_class_fields() -> None:
+    """Fields in a non-model base class must be processed."""
+    code = """
+    from pydantic import BaseModel, field
+
+    class A:
+        a: int = 0
+
+    class B(BaseModel, A):
+        b: int = 1
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False)),
+    ) as package:
+        assert "pydantic-field" in package["B.a"].labels
