@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+from textwrap import dedent
 from typing import TYPE_CHECKING
 
 import pytest
@@ -232,3 +233,61 @@ def test_process_non_model_base_class_fields() -> None:
         extensions=Extensions(PydanticExtension(schema=False)),
     ) as package:
         assert "pydantic-field" in package["B.a"].labels
+
+
+@pytest.mark.parametrize("analysis", ["static", "dynamic"])
+@pytest.mark.parametrize("base_mode", ["bases", "include_bases"])
+def test_detect_custom_bases(analysis: str, base_mode: str) -> None:
+    """We can detect pydantic models with non-standard bases as specified by config."""
+    package_name = "package"
+    module_name = "builtins"
+    class_name = "object"
+    code = dedent(f"""
+        from {module_name} import {class_name}
+
+        class ExampleParentModel({class_name}):
+            pass
+
+        class ExampleModel(ExampleParentModel):
+            pass
+    """)
+
+    fake_module = dedent(f"""
+    class {class_name}:
+        pass
+    """)
+
+    extension_kwargs = {base_mode: [".".join([module_name, class_name])]}
+
+    loader = {
+        "static": temporary_visited_package,
+        "dynamic": temporary_inspected_package,
+    }[analysis]
+    with loader(
+        package_name,
+        modules={"__init__.py": code, module_name + ".py": fake_module},
+        extensions=Extensions(PydanticExtension(**extension_kwargs)),  # type: ignore[arg-type]
+    ) as package:
+        assert "ExampleParentModel" in package.classes
+        assert "ExampleModel" in package.classes
+        assert package.classes["ExampleParentModel"].labels == {"pydantic-model"}
+        assert package.classes["ExampleModel"].labels == {"pydantic-model"}
+
+
+@pytest.mark.parametrize("analysis", ["static", "dynamic"])
+def test_replace_default_bases(analysis: str) -> None:
+    """When we replace the bases, pydantic models should no longer be annotated."""
+    loader = {
+        "static": temporary_visited_package,
+        "dynamic": temporary_inspected_package,
+    }[analysis]
+
+    with loader(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(bases=("fake.fakepackage.NoExisty",))),
+    ) as package:
+        assert "ExampleParentModel" in package.classes
+        assert "ExampleModel" in package.classes
+        assert not package.classes["ExampleParentModel"].labels
+        assert not package.classes["ExampleModel"].labels
