@@ -29,7 +29,7 @@ if TYPE_CHECKING:
 _logger = get_logger(__name__)
 
 
-def _inherits_pydantic(cls: Class) -> bool:
+def _inherits_pydantic(cls: Class, bases: tuple[str, ...] = common._DEFAULT_BASES) -> bool:
     """Tell whether a class inherits from a Pydantic model.
 
     Parameters:
@@ -41,10 +41,10 @@ def _inherits_pydantic(cls: Class) -> bool:
     for base in cls.bases:
         if isinstance(base, (ExprName, Expr)):
             base = base.canonical_path  # noqa: PLW2901
-        if base in {"pydantic.BaseModel", "pydantic.main.BaseModel"}:
+        if base in bases:
             return True
 
-    return any(_inherits_pydantic(parent_class) for parent_class in cls.mro())
+    return any(_inherits_pydantic(parent_class, bases) for parent_class in cls.mro())
 
 
 def _pydantic_validator(func: Function) -> ExprCall | None:
@@ -141,12 +141,18 @@ def _process_function(func: Function, cls: Class, *, processed: set[str]) -> Non
         common._process_function(func, cls, fields)
 
 
-def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> None:
+def _process_class(
+    cls: Class,
+    *,
+    processed: set[str],
+    schema: bool = False,
+    bases: tuple[str, ...] = common._DEFAULT_BASES,
+) -> None:
     """Finalize the Pydantic model data."""
     if cls.canonical_path in processed:
         return
 
-    if not _inherits_pydantic(cls):
+    if not _inherits_pydantic(cls, bases):
         return
 
     processed.add(cls.canonical_path)
@@ -182,6 +188,7 @@ def _process_module(
     *,
     processed: set[str],
     schema: bool = False,
+    bases: tuple[str, ...] = common._DEFAULT_BASES,
 ) -> None:
     """Handle Pydantic models in a module."""
     if mod.canonical_path in processed:
@@ -191,7 +198,7 @@ def _process_module(
     for cls in mod.classes.values():
         # Don't process aliases, real classes will be processed at some point anyway.
         if not cls.is_alias:
-            _process_class(cls, processed=processed, schema=schema)
+            _process_class(cls, processed=processed, schema=schema, bases=bases)
 
     for submodule in mod.modules.values():
-        _process_module(submodule, processed=processed, schema=schema)
+        _process_module(submodule, processed=processed, schema=schema, bases=bases)
