@@ -135,8 +135,6 @@ plugins:
           signature_crossrefs: true
           summary: true
 - llmstxt:
-    files:
-    - output: llms-full.txt
     sections:
       Documentation:
       - index.md
