@@ -232,3 +232,30 @@ def test_process_non_model_base_class_fields() -> None:
         extensions=Extensions(PydanticExtension(schema=False)),
     ) as package:
         assert "pydantic-field" in package["B.a"].labels
+
+def test_log_alias_debug_level(caplog: pytest.LogCaptureFixture) -> None:
+    """Test that alias debug logging works correctly."""
+    code_init = """
+    from .foo import Foo
+    class Bar(Foo):
+        pass
+    """
+    code_foo = """
+    from pydantic import BaseModel
+    class Foo(BaseModel):
+        def func(self) -> None:
+            pass
+    """
+    with (
+        caplog.at_level(logging.DEBUG),
+        temporary_visited_package(
+            "package",
+            modules={"__init__.py": code_init, "foo.py": code_foo},
+            extensions=Extensions(PydanticExtension(schema=False)),
+        ),
+    ):
+        assert any(
+            record.levelname == "DEBUG"
+            and record.message.startswith("cannot yet process Alias")
+            for record in caplog.records
+        )
