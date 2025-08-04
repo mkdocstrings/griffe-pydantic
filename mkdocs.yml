@@ -137,7 +137,8 @@ plugins:
 - llmstxt:
     files:
     - output: llms-full.txt
-      inputs:
+    sections:
+      Documentation:
       - index.md
       - reference/**.md
 - git-revision-date-localized:
