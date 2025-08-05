@@ -133,7 +133,7 @@ def _process_function(func: Function, cls: Class, *, processed: set[str]) -> Non
     processed.add(func.canonical_path)
 
     if isinstance(func, Alias):
-        _logger.warning(f"cannot yet process {func}")
+        _logger.debug(f"cannot yet process {func}")
         return
 
     if decorator := _pydantic_validator(func):
