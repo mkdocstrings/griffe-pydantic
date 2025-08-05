@@ -19,7 +19,7 @@ nav:
   - Changelog: changelog.md
   - Credits: credits.md
   - License: license.md
-- API reference: reference/griffe_pydantic.md
+- API reference: reference/api.md
 - Development:
   - Contributing: contributing.md
   - Code of Conduct: code_of_conduct.md
@@ -106,6 +106,7 @@ markdown_extensions:
 
 plugins:
 - search
+- autorefs
 - markdown-exec
 - section-index
 - coverage
@@ -118,6 +119,7 @@ plugins:
         - https://mkdocstrings.github.io/griffe/objects.inv
         - https://docs.pydantic.dev/latest/objects.inv
         options:
+          backlinks: tree
           docstring_options:
             ignore_init_summary: true
           docstring_section_style: list
@@ -135,11 +137,12 @@ plugins:
           signature_crossrefs: true
           summary: true
 - llmstxt:
-    files:
-    - output: llms-full.txt
-      inputs:
+    full_output: llms-full.txt
+    sections:
+      Usage:
       - index.md
-      - reference/**.md
+      API:
+      - reference/api.md
 - git-revision-date-localized:
     enabled: !ENV [DEPLOY, false]
     enable_creation_date: true
