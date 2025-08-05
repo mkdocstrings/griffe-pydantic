@@ -91,7 +91,7 @@ def _fixture_public_objects(public_api: griffe.Module) -> list[griffe.Object | g
 def _fixture_inventory() -> Inventory:
     inventory_file = Path(__file__).parent.parent / "site" / "objects.inv"
     if not inventory_file.exists():
-        raise pytest.skip("The objects inventory is not available.")
+        pytest.skip("The objects inventory is not available.")  # ty: ignore[call-non-callable]
     with inventory_file.open("rb") as file:
         return Inventory.parse_sphinx(file)
 
@@ -166,7 +166,11 @@ def test_inventory_matches_api(
         if item.name.startswith(ignore) or item.name in ignore_paths:
             continue
 
-        if item.domain == "py" and "(" not in item.name:
+        if (
+            item.domain == "py"
+            and "(" not in item.name
+            and (item.name == "griffe_pydantic" or item.name.startswith("griffe_pydantic."))
+        ):
             obj = loader.modules_collection[item.name]
             if obj.path not in public_api_paths and not any(path in public_api_paths for path in obj.aliases):
                 not_in_api.append(item.name)
