@@ -14,7 +14,7 @@ from pydantic.fields import FieldInfo
 
 from griffe_pydantic._internal import common
 
-_logger = get_logger(__name__)
+_logger = get_logger("griffe_pydantic")
 
 
 def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[str]) -> None:

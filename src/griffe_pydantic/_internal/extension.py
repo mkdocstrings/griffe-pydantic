@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from griffe import ObjectNode
 
 
-_logger = get_logger(__name__)
+_logger = get_logger("griffe_pydantic")
 
 
 class PydanticExtension(Extension):
