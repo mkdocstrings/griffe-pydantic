@@ -165,7 +165,7 @@ def test_inventory_matches_api(
         # YORE: Bump 2: Remove block.
         if item.name.startswith(ignore) or item.name in ignore_paths:
             continue
-        
+
         if (
             item.domain == "py"
             and "(" not in item.name

@@ -47,7 +47,7 @@ class PydanticExtension(Extension):
             return
 
         try:
-            import pydantic
+            import pydantic  # noqa: PLC0415
         except ImportError:
             _logger.warning("could not import pydantic - models will not be detected")
             return

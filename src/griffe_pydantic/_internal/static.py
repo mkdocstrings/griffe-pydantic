@@ -114,12 +114,12 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     attr.labels.discard("class-attribute")
     attr.labels.discard("instance-attribute")
 
-    attr.value = kwargs.get("default", None)
+    attr.value = kwargs.get("default")
     constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description"}}
     attr.extra[common._self_namespace]["constraints"] = constraints
 
     # Populate docstring from the field's `description` argument.
-    if not attr.docstring and (docstring := kwargs.get("description", None)):
+    if not attr.docstring and (docstring := kwargs.get("description")):
         try:
             attr.docstring = Docstring(ast.literal_eval(docstring), parent=attr)  # type: ignore[arg-type]
         except ValueError:
