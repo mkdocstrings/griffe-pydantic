@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.1.5](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.5) - 2025-08-05
+
+<small>[Compare with 1.1.4](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.4...1.1.5)</small>
+
+### Code Refactoring
+
+- Rename logger to `griffe_pydantic` ([ad436b5](https://github.com/mkdocstrings/griffe-pydantic/commit/ad436b5a5202e9f599c1021ad16498791f19cbfb) by Timothée Mazzucotelli).
+- Use DEBUG log level for unhandled objects ([1f33b32](https://github.com/mkdocstrings/griffe-pydantic/commit/1f33b320dc849a7525f740e82b5a5a869f9c0a36) by Martin Stancsics). [Issue-31](https://github.com/mkdocstrings/griffe-pydantic/issues/31), [PR-38](https://github.com/mkdocstrings/griffe-pydantic/pull/38)
+
 ## [1.1.4](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.4) - 2025-03-26
 
 <small>[Compare with 1.1.3](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.3...1.1.4)</small>
