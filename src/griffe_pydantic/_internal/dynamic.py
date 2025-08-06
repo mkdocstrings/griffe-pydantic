@@ -10,7 +10,6 @@ from griffe import (
     Kind,
     get_logger,
 )
-from pydantic.fields import FieldInfo
 
 from griffe_pydantic._internal import common
 
@@ -19,6 +18,8 @@ _logger = get_logger("griffe_pydantic")
 
 def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic fields."""
+    from pydantic.fields import FieldInfo  # noqa: PLC0415
+
     if attr.canonical_path in processed:
         return
     processed.add(attr.canonical_path)

@@ -66,6 +66,7 @@ def test_extension(analysis: str) -> None:
         "package",
         modules={"__init__.py": code},
         extensions=Extensions(PydanticExtension(schema=True)),
+        search_sys_path=analysis == "dynamic",
     ) as package:
         assert package
 
