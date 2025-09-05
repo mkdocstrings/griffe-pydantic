@@ -33,7 +33,7 @@ class PydanticExtension(Extension):
         self._processed: set[str] = set()
         self._recorded: list[tuple[ObjectNode, Class]] = []
 
-    def on_package_loaded(self, *, pkg: Module, **kwargs: Any) -> None:  # noqa: ARG002
+    def on_package(self, *, pkg: Module, **kwargs: Any) -> None:  # noqa: ARG002
         """Detect models once the whole package is loaded."""
         for node, cls in self._recorded:
             self._processed.add(cls.canonical_path)
