@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.1.7](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.7) - 2025-09-05
+
+<small>[Compare with 1.1.6](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.6...1.1.7)</small>
+
+### Build
+
+- Depend on Griffe 1.14 ([08f955c](https://github.com/mkdocstrings/griffe-pydantic/commit/08f955c86c52cc48f32868ab87260b792139d0d2) by Timothée Mazzucotelli).
+
 ## [1.1.6](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.6) - 2025-08-06
 
 <small>[Compare with 1.1.5](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.5...1.1.6)</small>
