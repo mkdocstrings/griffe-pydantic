@@ -23,7 +23,6 @@ Functions:
 
 ```
 PydanticExtension(*, schema: bool = False)
-
 ```
 
 Bases: `Extension`
@@ -37,7 +36,7 @@ Parameters:
 Methods:
 
 - **`on_class_instance`** – Detect and prepare Pydantic models.
-- **`on_package_loaded`** – Detect models once the whole package is loaded.
+- **`on_package`** – Detect models once the whole package is loaded.
 
 ### on_class_instance
 
@@ -45,16 +44,14 @@ Methods:
 on_class_instance(
     *, node: AST | ObjectNode, cls: Class, **kwargs: Any
 ) -> None
-
 ```
 
 Detect and prepare Pydantic models.
 
-### on_package_loaded
+### on_package
 
 ```
-on_package_loaded(*, pkg: Module, **kwargs: Any) -> None
-
+on_package(*, pkg: Module, **kwargs: Any) -> None
 ```
 
 Detect models once the whole package is loaded.
@@ -63,7 +60,6 @@ Detect models once the whole package is loaded.
 
 ```
 get_templates_path() -> Path
-
 ```
 
 Return the templates directory path.

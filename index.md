@@ -6,7 +6,6 @@
 
 ```
 pip install griffe-pydantic
-
 ```
 
 ## Usage
@@ -15,7 +14,6 @@ pip install griffe-pydantic
 
 ```
 griffe dump mypackage -e griffe_pydantic
-
 ```
 
 See [command-line usage in Griffe's documentation](https://mkdocstrings.github.io/griffe/extensions/#on-the-command-line).
@@ -31,7 +29,6 @@ griffe.load(
         [{"griffe_pydantic": {"schema": True}}]
     )
 )
-
 ```
 
 See [programmatic usage in Griffe's documentation](https://mkdocstrings.github.io/griffe/extensions/#programmatically).
@@ -49,7 +46,6 @@ plugins:
           extensions:
           - griffe_pydantic:
               schema: true
-
 ```
 
 See [MkDocs usage in Griffe's documentation](https://mkdocstrings.github.io/griffe/extensions/#in-mkdocs).
@@ -94,7 +90,6 @@ class ExampleModel(BaseModel):
         if isinstance(data.get("field_without_default"), str):
             data["field_without_default"] = data["field_without_default"].lower()
         return data
-
 ```
 
 ### ExampleModel
@@ -118,7 +113,6 @@ Attributes:
 
 ```
 field_plain_with_validator: int = 100
-
 ```
 
 Show standard field with type annotation.
@@ -129,7 +123,6 @@ Show standard field with type annotation.
 field_with_validator_and_alias: str = Field(
     "FooBar", alias="BarFoo", validation_alias="BarFoo"
 )
-
 ```
 
 Shows corresponding validator with link/anchor.
@@ -138,7 +131,6 @@ Shows corresponding validator with link/anchor.
 
 ```
 field_without_default: str
-
 ```
 
 Shows the *[Required]* marker in the signature.
@@ -147,7 +139,6 @@ Shows the *[Required]* marker in the signature.
 
 ```
 check_max_length_ten(v) -> str
-
 ```
 
 Show corresponding field with link/anchor.
@@ -156,7 +147,6 @@ Show corresponding field with link/anchor.
 
 ```
 lowercase_only(data: dict[str, Any]) -> dict[str, Any]
-
 ```
 
 Ensure that the field without a default is lowercase.
@@ -187,7 +177,6 @@ Validators:
 
 ```
 field_plain_with_validator: int = 100
-
 ```
 
 Show standard field with type annotation.
@@ -196,7 +185,6 @@ Show standard field with type annotation.
 
 ```
 field_with_constraints_and_description: int = 5
-
 ```
 
 Shows constraints within doc string.
@@ -205,7 +193,6 @@ Shows constraints within doc string.
 
 ```
 field_with_validator_and_alias: str = 'FooBar'
-
 ```
 
 Shows corresponding validator with link/anchor.
@@ -214,7 +201,6 @@ Shows corresponding validator with link/anchor.
 
 ```
 field_without_default: str
-
 ```
 
 Shows the *[Required]* marker in the signature.
@@ -223,7 +209,6 @@ Shows the *[Required]* marker in the signature.
 
 ```
 check_max_length_ten(v) -> str
-
 ```
 
 Show corresponding field with link/anchor.
@@ -232,7 +217,6 @@ Show corresponding field with link/anchor.
 
 ```
 lowercase_only(data: dict[str, Any]) -> dict[str, Any]
-
 ```
 
 Ensure that the field without a default is lowercase.
