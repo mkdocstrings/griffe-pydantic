@@ -233,3 +233,27 @@ def test_process_non_model_base_class_fields() -> None:
         extensions=Extensions(PydanticExtension(schema=False)),
     ) as package:
         assert "pydantic-field" in package["B.a"].labels
+
+
+@pytest.mark.skip(reason="Currently not supported.")
+def test_annotated_fields() -> None:
+    """Test the extension with annotated fields."""
+    code = """
+    from pydantic import BaseModel, Field
+    from typing import Annotated
+
+    class Model(BaseModel):
+        a: Annotated[int, Field(description="Some description.")]
+        b: Annotated[int, Field(description="Another description.")] = 1
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False)),
+    ) as package:
+        assert package["Model.a"].is_attribute
+        assert package["Model.b"].is_attribute
+        assert "pydantic-field" in package["Model.a"].labels
+        assert "pydantic-field" in package["Model.b"].labels
+        assert package["Model.a"].docstring == "Some description."
+        assert package["Model.b"].docstring == "Another description."
