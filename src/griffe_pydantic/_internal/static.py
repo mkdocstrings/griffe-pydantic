@@ -29,22 +29,28 @@ if TYPE_CHECKING:
 _logger = get_logger("griffe_pydantic")
 
 
-def _inherits_pydantic(cls: Class) -> bool:
+def _inherits_pydantic(cls: Class, extra_bases: list[str] | None = None) -> bool:
     """Tell whether a class inherits from a Pydantic model.
 
     Parameters:
         cls: A Griffe class.
+        extra_bases: Additional base classes to consider as Pydantic models.
 
     Returns:
         True/False.
     """
+    extra_bases = extra_bases or []
+
     for base in cls.bases:
         if isinstance(base, (ExprName, Expr)):
             base = base.canonical_path  # noqa: PLW2901
         if base in {"pydantic.BaseModel", "pydantic.main.BaseModel"}:
             return True
+        # Check if the base matches any of the extra bases
+        if base in extra_bases:
+            return True
 
-    return any(_inherits_pydantic(parent_class) for parent_class in cls.mro())
+    return any(_inherits_pydantic(parent_class, extra_bases) for parent_class in cls.mro())
 
 
 def _pydantic_validator(func: Function) -> ExprCall | None:
@@ -123,7 +129,9 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
         try:
             attr.docstring = Docstring(ast.literal_eval(docstring), parent=attr)  # type: ignore[arg-type]
         except ValueError:
-            _logger.debug(f"Could not parse description of field '{attr.path}' as literal, skipping")
+            _logger.debug(
+                f"Could not parse description of field '{attr.path}' as literal, skipping",
+            )
 
 
 def _process_function(func: Function, cls: Class, *, processed: set[str]) -> None:
@@ -141,12 +149,18 @@ def _process_function(func: Function, cls: Class, *, processed: set[str]) -> Non
         common._process_function(func, cls, fields)
 
 
-def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> None:
+def _process_class(
+    cls: Class,
+    *,
+    processed: set[str],
+    schema: bool = False,
+    extra_bases: list[str] | None = None,
+) -> None:
     """Finalize the Pydantic model data."""
     if cls.canonical_path in processed:
         return
 
-    if not _inherits_pydantic(cls):
+    if not _inherits_pydantic(cls, extra_bases):
         return
 
     processed.add(cls.canonical_path)
@@ -174,7 +188,12 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
         elif kind is Kind.FUNCTION:
             _process_function(member, cls, processed=processed)  # type: ignore[arg-type]
         elif kind is Kind.CLASS:
-            _process_class(member, processed=processed, schema=schema)  # type: ignore[arg-type]
+            _process_class(
+                member,  # type: ignore[arg-type]
+                processed=processed,
+                schema=schema,
+                extra_bases=extra_bases,
+            )
 
 
 def _process_module(
@@ -182,6 +201,7 @@ def _process_module(
     *,
     processed: set[str],
     schema: bool = False,
+    extra_bases: list[str] | None = None,
 ) -> None:
     """Handle Pydantic models in a module."""
     if mod.canonical_path in processed:
@@ -191,7 +211,17 @@ def _process_module(
     for cls in mod.classes.values():
         # Don't process aliases, real classes will be processed at some point anyway.
         if not cls.is_alias:
-            _process_class(cls, processed=processed, schema=schema)
+            _process_class(
+                cls,
+                processed=processed,
+                schema=schema,
+                extra_bases=extra_bases,
+            )
 
     for submodule in mod.modules.values():
-        _process_module(submodule, processed=processed, schema=schema)
+        _process_module(
+            submodule,
+            processed=processed,
+            schema=schema,
+            extra_bases=extra_bases,
+        )
