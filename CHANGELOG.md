@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.1.8](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.8) - 2025-10-14
+
+<small>[Compare with 1.1.7](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.7...1.1.8)</small>
+
+### Bug Fixes
+
+- Don't process module aliases (all modules eventually get processed) ([87ab586](https://github.com/mkdocstrings/griffe-pydantic/commit/87ab5866a03ed9b901b8e62ce8055edbeec7d3a9) by Timothée Mazzucotelli). [Issue-45](https://github.com/mkdocstrings/griffe-pydantic/issues/45)
+- Prevent crashes while computing JSON schemas ([ec1b424](https://github.com/mkdocstrings/griffe-pydantic/commit/ec1b42404a2eecaab87041830f6e2c4176d18b80) by Timothée Mazzucotelli).
+
 ## [1.1.7](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.7) - 2025-09-05
 
 <small>[Compare with 1.1.6](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.6...1.1.7)</small>
