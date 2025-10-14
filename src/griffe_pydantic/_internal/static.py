@@ -198,4 +198,6 @@ def _process_module(
             _process_class(cls, processed=processed, schema=schema)
 
     for submodule in mod.modules.values():
-        _process_module(submodule, processed=processed, schema=schema)
+        # Same for modules, don't process aliased ones.
+        if not submodule.is_alias:
+            _process_module(submodule, processed=processed, schema=schema)
