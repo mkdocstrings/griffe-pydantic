@@ -56,7 +56,11 @@ def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool =
     """Detect and prepare Pydantic models."""
     common._process_class(cls)
     if schema:
-        cls.extra[common._self_namespace]["schema"] = common._json_schema(obj)
+        try:
+            cls.extra[common._self_namespace]["schema"] = common._json_schema(obj)
+        except Exception as exc:
+            # Schema generation can fail and raise Pydantic errors.
+            _logger.debug("Failed to generate schema for %s: %s", cls.path, exc)
     for member in cls.all_members.values():
         kind = member.kind
         if kind is Kind.ATTRIBUTE:

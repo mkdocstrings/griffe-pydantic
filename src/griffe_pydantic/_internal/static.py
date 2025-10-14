@@ -165,7 +165,11 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
         except ImportError:
             _logger.debug(f"Could not import class {cls.path} for JSON schema")
             return
-        cls.extra[common._self_namespace]["schema"] = common._json_schema(true_class)
+        try:
+            cls.extra[common._self_namespace]["schema"] = common._json_schema(true_class)
+        except Exception as exc:
+            # Schema generation can fail and raise Pydantic errors.
+            _logger.debug("Failed to generate schema for %s: %s", cls.path, exc)
 
     for member in cls.all_members.values():
         kind = member.kind
