@@ -13,6 +13,8 @@ from griffe import (
     ExprCall,
     ExprKeyword,
     ExprName,
+    ExprSubscript,
+    ExprTuple,
     Function,
     Kind,
     Module,
@@ -80,8 +82,37 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     if "class-attribute" in attr.labels and "instance-attribute" not in attr.labels:
         return
 
+    # Check if the annotation is Annotated[type, Field(...)]
+    field_call = None
+    if (
+        isinstance(attr.annotation, ExprSubscript)
+        and attr.annotation.canonical_path == "typing.Annotated"
+        and isinstance(attr.annotation.slice, ExprTuple)
+    ):
+        # Extract Field from Annotated's slice elements
+        slice_elements = attr.annotation.slice.elements
+        # Replace annotation with the actual type (first element)
+        if len(slice_elements) > 0:
+            attr.annotation = slice_elements[0]
+
+        for element in slice_elements:
+            if isinstance(element, ExprCall) and element.function.canonical_path == "pydantic.Field":
+                field_call = element
+                break
+
     kwargs = {}
-    if isinstance(attr.value, ExprCall):
+    if field_call is not None:
+        # Extract kwargs from Field in Annotated
+        kwargs = {
+            argument.name: argument.value for argument in field_call.arguments if isinstance(argument, ExprKeyword)
+        }
+        if (
+            len(field_call.arguments) >= 1
+            and not isinstance(field_call.arguments[0], ExprKeyword)
+            and field_call.arguments[0] != "..."  # handle Field(...), i.e. no default
+        ):
+            kwargs["default"] = field_call.arguments[0]
+    elif isinstance(attr.value, ExprCall):
         kwargs = {
             argument.name: argument.value for argument in attr.value.arguments if isinstance(argument, ExprKeyword)
         }
