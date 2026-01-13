@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.2.0](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.2.0) - 2026-01-13
+
+<small>[Compare with 1.1.8](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.8...1.2.0)</small>
+
+### Features
+
+- Support Pydantic Field defined via Annotated ([5021332](https://github.com/mkdocstrings/griffe-pydantic/commit/502133277db3201e5003e229c914539bc0fc06fd) by Michele Dolfi). [Issue-37](https://github.com/mkdocstrings/griffe-pydantic/issues/37), [PR-46](https://github.com/mkdocstrings/griffe-pydantic/pull/46)
+
 ## [1.1.8](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.1.8) - 2025-10-14
 
 <small>[Compare with 1.1.7](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.7...1.1.8)</small>
