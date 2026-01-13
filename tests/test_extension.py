@@ -235,7 +235,6 @@ def test_process_non_model_base_class_fields() -> None:
         assert "pydantic-field" in package["B.a"].labels
 
 
-@pytest.mark.skip(reason="Currently not supported.")
 def test_annotated_fields() -> None:
     """Test the extension with annotated fields."""
     code = """
@@ -255,5 +254,8 @@ def test_annotated_fields() -> None:
         assert package["Model.b"].is_attribute
         assert "pydantic-field" in package["Model.a"].labels
         assert "pydantic-field" in package["Model.b"].labels
-        assert package["Model.a"].docstring == "Some description."
-        assert package["Model.b"].docstring == "Another description."
+        assert package["Model.a"].docstring.value == "Some description."
+        assert package["Model.b"].docstring.value == "Another description."
+        # Check that annotation is the actual type, not Annotated[...]
+        assert str(package["Model.a"].annotation) == "int"
+        assert str(package["Model.b"].annotation) == "int"
