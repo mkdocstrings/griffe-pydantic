@@ -5,17 +5,12 @@ from __future__ import annotations
 import os
 import re
 import sys
-from contextlib import contextmanager
-from functools import wraps
-from importlib.metadata import version as pkgversion
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING
 
 from duty import duty, tools
 
 if TYPE_CHECKING:
-    from collections.abc import Iterator
-
     from duty.context import Context
 
 
@@ -35,33 +30,6 @@ def pyprefix(title: str) -> str:
         prefix = f"(python{sys.version_info.major}.{sys.version_info.minor})"
         return f"{prefix:14}{title}"
     return title
-
-
-def not_from_insiders(func: Callable) -> Callable:
-    @wraps(func)
-    def wrapper(ctx: Context, *args: Any, **kwargs: Any) -> None:
-        origin = ctx.run("git config --get remote.origin.url", silent=True)
-        if "pawamoy-insiders/griffe" in origin:
-            ctx.run(
-                lambda: False,
-                title="Not running this task from insiders repository (do that from public repo instead!)",
-            )
-            return
-        func(ctx, *args, **kwargs)
-
-    return wrapper
-
-
-@contextmanager
-def material_insiders() -> Iterator[bool]:
-    if "+insiders" in pkgversion("mkdocs-material"):
-        os.environ["MATERIAL_INSIDERS"] = "true"
-        try:
-            yield True
-        finally:
-            os.environ.pop("MATERIAL_INSIDERS")
-    else:
-        yield False
 
 
 def _get_changelog_version() -> str:
@@ -100,11 +68,10 @@ def check_docs(ctx: Context) -> None:
     """Check if the documentation builds correctly."""
     Path("htmlcov").mkdir(parents=True, exist_ok=True)
     Path("htmlcov/index.html").touch(exist_ok=True)
-    with material_insiders():
-        ctx.run(
-            tools.mkdocs.build(strict=True, verbose=True),
-            title=pyprefix("Building documentation"),
-        )
+    ctx.run(
+        tools.mkdocs.build(strict=True, verbose=True),
+        title=pyprefix("Building documentation"),
+    )
 
 
 @duty(nofail=PY_VERSION == PY_DEV)
@@ -135,48 +102,18 @@ def docs(ctx: Context, *cli_args: str, host: str = "127.0.0.1", port: int = 8000
         host: The host to serve the docs from.
         port: The port to serve the docs on.
     """
-    with material_insiders():
-        ctx.run(
-            tools.mkdocs.serve(dev_addr=f"{host}:{port}").add_args(*cli_args),
-            title="Serving documentation",
-            capture=False,
-        )
+    ctx.run(
+        tools.mkdocs.serve(dev_addr=f"{host}:{port}").add_args(*cli_args),
+        title="Serving documentation",
+        capture=False,
+    )
 
 
 @duty
-def docs_deploy(ctx: Context, *, force: bool = False) -> None:
-    """Deploy the documentation to GitHub pages.
-
-    Parameters:
-        force: Whether to force deployment, even from non-Insiders version.
-    """
+def docs_deploy(ctx: Context) -> None:
+    """Deploy the documentation to GitHub pages."""
     os.environ["DEPLOY"] = "true"
-    with material_insiders() as insiders:
-        if not insiders:
-            ctx.run(lambda: False, title="Not deploying docs without Material for MkDocs Insiders!")
-        origin = ctx.run("git config --get remote.origin.url", silent=True, allow_overrides=False)
-        if "pawamoy-insiders/griffe-pydantic" in origin:
-            ctx.run(
-                "git remote add upstream git@github.com:mkdocstrings/griffe-pydantic",
-                silent=True,
-                nofail=True,
-                allow_overrides=False,
-            )
-            ctx.run(
-                tools.mkdocs.gh_deploy(remote_name="upstream", force=True),
-                title="Deploying documentation",
-            )
-        elif force:
-            ctx.run(
-                tools.mkdocs.gh_deploy(force=True),
-                title="Deploying documentation",
-            )
-        else:
-            ctx.run(
-                lambda: False,
-                title="Not deploying docs from public repository (do that from insiders instead!)",
-                nofail=True,
-            )
+    ctx.run(tools.mkdocs.gh_deploy(force=True), title="Deploying documentation")
 
 
 @duty
@@ -200,7 +137,6 @@ def build(ctx: Context) -> None:
 
 
 @duty
-@not_from_insiders
 def publish(ctx: Context) -> None:
     """Publish source and wheel distributions to PyPI."""
     if not Path("dist").exists():
@@ -214,7 +150,6 @@ def publish(ctx: Context) -> None:
 
 
 @duty(post=["build", "publish", "docs-deploy"])
-@not_from_insiders
 def release(ctx: Context, version: str = "") -> None:
     """Release a new Python package.
 
@@ -225,7 +160,7 @@ def release(ctx: Context, version: str = "") -> None:
         ctx.run("false", title="A version must be provided")
     ctx.run("git add pyproject.toml CHANGELOG.md", title="Staging files", pty=PTY)
     ctx.run(["git", "commit", "-m", f"chore: Prepare release {version}"], title="Committing changes", pty=PTY)
-    ctx.run(f"git tag {version}", title="Tagging commit", pty=PTY)
+    ctx.run(f"git tag -m '' -a {version}", title="Tagging commit", pty=PTY)
     ctx.run("git push", title="Pushing commits", pty=False)
     ctx.run("git push --tags", title="Pushing tags", pty=False)
 
@@ -239,18 +174,14 @@ def coverage(ctx: Context) -> None:
 
 
 @duty(nofail=PY_VERSION == PY_DEV)
-def test(ctx: Context, *cli_args: str, match: str = "") -> None:  # noqa: PT028
-    """Run the test suite.
-
-    Parameters:
-        match: A pytest expression to filter selected tests.
-    """
+def test(ctx: Context, *cli_args: str) -> None:
+    """Run the test suite."""
     os.environ["COVERAGE_FILE"] = f".coverage.{PY_VERSION}"
+    os.environ["PYTHONWARNDEFAULTENCODING"] = "1"
     ctx.run(
         tools.pytest(
             "tests",
             config_file="config/pytest.ini",
-            select=match,
             color="yes",
         ).add_args("-n", "auto", *cli_args),
         title=pyprefix("Running tests"),

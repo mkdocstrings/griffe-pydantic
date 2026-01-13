@@ -53,3 +53,8 @@ plugins:
 
 
 See [MkDocs usage in Griffe's documentation](https://mkdocstrings.github.io/griffe/extensions/#in-mkdocs).
+
+## Sponsors
+
+<!-- sponsors-start -->
+<!-- sponsors-end -->
