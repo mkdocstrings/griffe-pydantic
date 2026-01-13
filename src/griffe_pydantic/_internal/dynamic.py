@@ -58,7 +58,7 @@ def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool =
     if schema:
         try:
             cls.extra[common._self_namespace]["schema"] = common._json_schema(obj)
-        except Exception as exc:
+        except Exception as exc:  # noqa: BLE001
             # Schema generation can fail and raise Pydantic errors.
             _logger.debug("Failed to generate schema for %s: %s", cls.path, exc)
     for member in cls.all_members.values():
