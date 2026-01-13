@@ -50,6 +50,8 @@ plugins:
 
 See [MkDocs usage in Griffe's documentation](https://mkdocstrings.github.io/griffe/extensions/#in-mkdocs).
 
+## Sponsors
+
 ## Examples
 
 ```
@@ -143,6 +145,18 @@ check_max_length_ten(v) -> str
 
 Show corresponding field with link/anchor.
 
+Source code in `docs/examples/model_noext.py`
+
+```
+@field_validator("field_with_validator_and_alias", "field_without_default", mode="before")
+@classmethod
+def check_max_length_ten(cls, v) -> str:
+    """Show corresponding field with link/anchor."""
+    if len(v) >= 10:
+        raise ValueError("No more than 10 characters allowed")
+    return v
+```
+
 #### lowercase_only
 
 ```
@@ -150,6 +164,18 @@ lowercase_only(data: dict[str, Any]) -> dict[str, Any]
 ```
 
 Ensure that the field without a default is lowercase.
+
+Source code in `docs/examples/model_noext.py`
+
+```
+@model_validator(mode="before")
+@classmethod
+def lowercase_only(cls, data: dict[str, Any]) -> dict[str, Any]:
+    """Ensure that the field without a default is lowercase."""
+    if isinstance(data.get("field_without_default"), str):
+        data["field_without_default"] = data["field_without_default"].lower()
+    return data
+```
 
 ### ExampleModel
 
@@ -213,6 +239,18 @@ check_max_length_ten(v) -> str
 
 Show corresponding field with link/anchor.
 
+Source code in `docs/examples/model_ext.py`
+
+```
+@field_validator("field_with_validator_and_alias", "field_without_default", mode="before")
+@classmethod
+def check_max_length_ten(cls, v) -> str:
+    """Show corresponding field with link/anchor."""
+    if len(v) >= 10:
+        raise ValueError("No more than 10 characters allowed")
+    return v
+```
+
 #### lowercase_only
 
 ```
@@ -220,3 +258,15 @@ lowercase_only(data: dict[str, Any]) -> dict[str, Any]
 ```
 
 Ensure that the field without a default is lowercase.
+
+Source code in `docs/examples/model_ext.py`
+
+```
+@model_validator(mode="before")
+@classmethod
+def lowercase_only(cls, data: dict[str, Any]) -> dict[str, Any]:
+    """Ensure that the field without a default is lowercase."""
+    if isinstance(data.get("field_without_default"), str):
+        data["field_without_default"] = data["field_without_default"].lower()
+    return data
+```

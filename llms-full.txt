@@ -56,6 +56,8 @@ plugins:
 
 See [MkDocs usage in Griffe's documentation](https://mkdocstrings.github.io/griffe/extensions/#in-mkdocs).
 
+## Sponsors
+
 ## Examples
 
 ```
@@ -149,6 +151,18 @@ check_max_length_ten(v) -> str
 
 Show corresponding field with link/anchor.
 
+Source code in `docs/examples/model_noext.py`
+
+```
+@field_validator("field_with_validator_and_alias", "field_without_default", mode="before")
+@classmethod
+def check_max_length_ten(cls, v) -> str:
+    """Show corresponding field with link/anchor."""
+    if len(v) >= 10:
+        raise ValueError("No more than 10 characters allowed")
+    return v
+```
+
 #### lowercase_only
 
 ```
@@ -156,6 +170,18 @@ lowercase_only(data: dict[str, Any]) -> dict[str, Any]
 ```
 
 Ensure that the field without a default is lowercase.
+
+Source code in `docs/examples/model_noext.py`
+
+```
+@model_validator(mode="before")
+@classmethod
+def lowercase_only(cls, data: dict[str, Any]) -> dict[str, Any]:
+    """Ensure that the field without a default is lowercase."""
+    if isinstance(data.get("field_without_default"), str):
+        data["field_without_default"] = data["field_without_default"].lower()
+    return data
+```
 
 ### ExampleModel
 
@@ -219,6 +245,18 @@ check_max_length_ten(v) -> str
 
 Show corresponding field with link/anchor.
 
+Source code in `docs/examples/model_ext.py`
+
+```
+@field_validator("field_with_validator_and_alias", "field_without_default", mode="before")
+@classmethod
+def check_max_length_ten(cls, v) -> str:
+    """Show corresponding field with link/anchor."""
+    if len(v) >= 10:
+        raise ValueError("No more than 10 characters allowed")
+    return v
+```
+
 #### lowercase_only
 
 ```
@@ -226,6 +264,18 @@ lowercase_only(data: dict[str, Any]) -> dict[str, Any]
 ```
 
 Ensure that the field without a default is lowercase.
+
+Source code in `docs/examples/model_ext.py`
+
+```
+@model_validator(mode="before")
+@classmethod
+def lowercase_only(cls, data: dict[str, Any]) -> dict[str, Any]:
+    """Ensure that the field without a default is lowercase."""
+    if isinstance(data.get("field_without_default"), str):
+        data["field_without_default"] = data["field_without_default"].lower()
+    return data
+```
 # API
 
 # griffe_pydantic
@@ -268,6 +318,21 @@ Methods:
 - **`on_class_instance`** – Detect and prepare Pydantic models.
 - **`on_package`** – Detect models once the whole package is loaded.
 
+Source code in `src/griffe_pydantic/_internal/extension.py`
+
+```
+def __init__(self, *, schema: bool = False) -> None:
+    """Initialize the extension.
+
+    Parameters:
+        schema: Whether to compute and store the JSON schema of models.
+    """
+    super().__init__()
+    self._schema = schema
+    self._processed: set[str] = set()
+    self._recorded: list[tuple[ObjectNode, Class]] = []
+```
+
 ### on_class_instance
 
 ```
@@ -278,6 +343,25 @@ on_class_instance(
 
 Detect and prepare Pydantic models.
 
+Source code in `src/griffe_pydantic/_internal/extension.py`
+
+```
+def on_class_instance(self, *, node: ast.AST | ObjectNode, cls: Class, **kwargs: Any) -> None:  # noqa: ARG002
+    """Detect and prepare Pydantic models."""
+    # Prevent running during static analysis.
+    if isinstance(node, ast.AST):
+        return
+
+    try:
+        import pydantic  # noqa: PLC0415
+    except ImportError:
+        _logger.warning("could not import pydantic - models will not be detected")
+        return
+
+    if issubclass(node.obj, pydantic.BaseModel):
+        self._recorded.append((node, cls))
+```
+
 ### on_package
 
 ```
@@ -286,6 +370,17 @@ on_package(*, pkg: Module, **kwargs: Any) -> None
 
 Detect models once the whole package is loaded.
 
+Source code in `src/griffe_pydantic/_internal/extension.py`
+
+```
+def on_package(self, *, pkg: Module, **kwargs: Any) -> None:  # noqa: ARG002
+    """Detect models once the whole package is loaded."""
+    for node, cls in self._recorded:
+        self._processed.add(cls.canonical_path)
+        dynamic._process_class(node.obj, cls, processed=self._processed, schema=self._schema)
+    static._process_module(pkg, processed=self._processed, schema=self._schema)
+```
+
 ## get_templates_path
 
 ```
@@ -293,6 +388,14 @@ get_templates_path() -> Path
 ```
 
 Return the templates directory path.
+
+Source code in `src/griffe_pydantic/__init__.py`
+
+```
+def get_templates_path() -> Path:
+    """Return the templates directory path."""
+    return Path(__file__).parent / "templates"
+```
 
 ## common
 
