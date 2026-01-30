@@ -82,6 +82,13 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     if "class-attribute" in attr.labels and "instance-attribute" not in attr.labels:
         return
 
+    # PrivateAttr values are not public fields.
+    if isinstance(attr.value, ExprCall) and attr.value.function.canonical_path in {
+        "pydantic.PrivateAttr",
+        "pydantic.fields.PrivateAttr",
+    }:
+        return
+
     # Check if the annotation is Annotated[type, Field(...)]
     field_call = None
     if (
@@ -96,9 +103,16 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
             attr.annotation = slice_elements[0]
 
         for element in slice_elements:
-            if isinstance(element, ExprCall) and element.function.canonical_path == "pydantic.Field":
-                field_call = element
-                break
+            if isinstance(element, ExprCall):
+                # PrivateAttr values are not public fields.
+                if element.function.canonical_path in {
+                    "pydantic.PrivateAttr",
+                    "pydantic.fields.PrivateAttr",
+                }:
+                    return
+                if element.function.canonical_path == "pydantic.Field":
+                    field_call = element
+                    break
 
     kwargs = {}
     if field_call is not None:
