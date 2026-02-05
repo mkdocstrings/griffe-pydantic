@@ -259,3 +259,40 @@ def test_annotated_fields() -> None:
         # Check that annotation is the actual type, not Annotated[...]
         assert str(package["Model.a"].annotation) == "int"
         assert str(package["Model.b"].annotation) == "int"
+
+
+def test_ignore_private_attrs() -> None:
+    """Test the extension ignores private attributes."""
+    code = """
+    from pydantic import BaseModel, PrivateAttr
+
+    class Model(BaseModel):
+        field: str
+        _private: str = PrivateAttr(default="secret")
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False)),
+    ) as package:
+        assert "pydantic-field" in package["Model.field"].labels
+        assert "pydantic-field" not in package["Model._private"].labels
+
+
+def test_ignore_private_attrs_annotated() -> None:
+    """Test the extension ignores private attributes with Annotated syntax."""
+    code = """
+    from pydantic import BaseModel, PrivateAttr
+    from typing import Annotated
+
+    class Model(BaseModel):
+        field: str
+        _private: Annotated[str, PrivateAttr(default="secret")]
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False)),
+    ) as package:
+        assert "pydantic-field" in package["Model.field"].labels
+        assert "pydantic-field" not in package["Model._private"].labels
