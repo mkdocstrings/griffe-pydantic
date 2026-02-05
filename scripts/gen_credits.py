@@ -47,7 +47,7 @@ def _norm_name(name: str) -> str:
     return name.replace("_", "-").replace(".", "-").lower()
 
 
-def _requirements(deps: list[str]) -> dict[str, Requirement]:
+def _requirements(deps: Iterable[str]) -> dict[str, Requirement]:
     return {_norm_name((req := Requirement(dep)).name): req for dep in deps}
 
 
@@ -63,8 +63,8 @@ def _extra_marker(req: Requirement) -> str | None:
 def _get_metadata() -> Metadata:
     metadata = {}
     for pkg in distributions():
-        name = _norm_name(pkg.name)  # type: ignore[attr-defined,unused-ignore]
-        metadata[name] = _merge_fields(pkg.metadata)  # type: ignore[arg-type]
+        name = _norm_name(pkg.name)
+        metadata[name] = _merge_fields(pkg.metadata)  # ty: ignore[invalid-argument-type]
         metadata[name]["spec"] = set()
         metadata[name]["extras"] = set()
         metadata[name].setdefault("summary", "")
@@ -77,10 +77,11 @@ def _set_license(metadata: PackageMetadata) -> None:
     license_name = license_field if isinstance(license_field, str) else " + ".join(license_field)
     check_classifiers = license_name in ("UNKNOWN", "Dual License", "") or license_name.count("\n")
     if check_classifiers:
-        license_names = []
-        for classifier in metadata["classifier"]:
-            if classifier.startswith("License ::"):
-                license_names.append(classifier.rsplit("::", 1)[1].strip())
+        license_names = [
+            classifier.rsplit("::", 1)[1].strip()
+            for classifier in metadata["classifier"]
+            if classifier.startswith("License ::")
+        ]
         license_name = " + ".join(license_names)
     metadata["license"] = license_name or "?"
 
@@ -90,8 +91,8 @@ def _get_deps(base_deps: dict[str, Requirement], metadata: Metadata) -> Metadata
     for dep_name, dep_req in base_deps.items():
         if dep_name not in metadata or dep_name == "griffe-pydantic":
             continue
-        metadata[dep_name]["spec"] |= {str(spec) for spec in dep_req.specifier}  # type: ignore[operator]
-        metadata[dep_name]["extras"] |= dep_req.extras  # type: ignore[operator]
+        metadata[dep_name]["spec"] |= {str(spec) for spec in dep_req.specifier}  # ty: ignore[unsupported-operator]
+        metadata[dep_name]["extras"] |= dep_req.extras  # ty: ignore[unsupported-operator]
         deps[dep_name] = metadata[dep_name]
 
     again = True
@@ -109,7 +110,7 @@ def _get_deps(base_deps: dict[str, Requirement], metadata: Metadata) -> Metadata
                         and dep_name != project["name"]
                         and (not extra_marker or extra_marker in deps[pkg_name]["extras"])
                     ):
-                        metadata[dep_name]["spec"] |= {str(spec) for spec in requirement.specifier}  # type: ignore[operator]
+                        metadata[dep_name]["spec"] |= {str(spec) for spec in requirement.specifier}  # ty: ignore[unsupported-operator]
                         deps[dep_name] = metadata[dep_name]
                         again = True
 
@@ -121,7 +122,7 @@ def _render_credits() -> str:
     dev_dependencies = _get_deps(_requirements(devdeps), metadata)
     prod_dependencies = _get_deps(
         _requirements(
-            chain(  # type: ignore[arg-type]
+            chain(
                 project.get("dependencies", []),
                 chain(*project.get("optional-dependencies", {}).values()),
             ),
