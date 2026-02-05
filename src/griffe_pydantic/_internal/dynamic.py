@@ -57,13 +57,13 @@ def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool =
     common._process_class(cls)
     if schema:
         try:
-            cls.extra[common._self_namespace]["schema"] = common._json_schema(obj)
+            cls.extra[common._self_namespace]["schema"] = common._json_schema(obj)  # ty: ignore[invalid-argument-type]
         except Exception as exc:  # noqa: BLE001
             # Schema generation can fail and raise Pydantic errors.
             _logger.debug("Failed to generate schema for %s: %s", cls.path, exc)
     for member in cls.all_members.values():
         kind = member.kind
         if kind is Kind.ATTRIBUTE:
-            _process_attribute(getattr(obj, member.name), member, cls, processed=processed)  # type: ignore[arg-type]
+            _process_attribute(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.FUNCTION:
-            _process_function(getattr(obj, member.name), member, cls, processed=processed)  # type: ignore[arg-type]
+            _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]

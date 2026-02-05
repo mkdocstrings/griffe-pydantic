@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
     from mkdocs import config
-    from mkdocstrings_handlers.python.handler import PythonHandler
+    from mkdocstrings_handlers.python import PythonHandler
 
 
 @pytest.fixture(name="mkdocs_conf")
@@ -22,7 +22,7 @@ def fixture_mkdocs_conf(request: pytest.FixtureRequest, tmp_path: Path) -> Itera
     """Yield a MkDocs configuration object."""
     conf = MkDocsConfig()
     while hasattr(request, "_parent_request") and hasattr(request._parent_request, "_parent_request"):
-        request = request._parent_request
+        request = request._parent_request  # ty: ignore[invalid-assignment]
 
     conf_dict = {
         "site_name": "foo",
@@ -32,7 +32,7 @@ def fixture_mkdocs_conf(request: pytest.FixtureRequest, tmp_path: Path) -> Itera
         **getattr(request, "param", {}),
     }
     # Re-create it manually as a workaround for https://github.com/mkdocs/mkdocs/issues/2289
-    mdx_configs: dict[str, Any] = dict(ChainMap(*conf_dict.get("markdown_extensions", [])))
+    mdx_configs: dict[str, Any] = dict(ChainMap(*conf_dict.get("markdown_extensions", [])))  # ty: ignore[invalid-argument-type]
 
     conf.load_dict(conf_dict)
     assert conf.validate() == ([], [])
@@ -49,7 +49,7 @@ def fixture_mkdocs_conf(request: pytest.FixtureRequest, tmp_path: Path) -> Itera
 @pytest.fixture(name="python_handler")
 def fixture_python_handler(mkdocs_conf: MkDocsConfig) -> PythonHandler:
     """Return a PythonHandler instance."""
-    handlers = mkdocs_conf.plugins["mkdocstrings"].handlers  # type: ignore[attr-defined]
+    handlers = mkdocs_conf.plugins["mkdocstrings"].handlers  # ty: ignore[possibly-missing-attribute]
     handler = handlers.get_handler("python")
     handler._update_env(md=Markdown(extensions=["toc"]))
     handler.env.filters["convert_markdown"] = lambda *args, **kwargs: str(args) + str(kwargs)

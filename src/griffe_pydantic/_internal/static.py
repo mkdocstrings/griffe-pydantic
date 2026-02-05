@@ -152,7 +152,7 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (docstring := kwargs.get("description")):
         try:
-            attr.docstring = Docstring(ast.literal_eval(docstring), parent=attr)  # type: ignore[arg-type]
+            attr.docstring = Docstring(ast.literal_eval(docstring), parent=attr)  # ty: ignore[invalid-argument-type]
         except ValueError:
             _logger.debug(f"Could not parse description of field '{attr.path}' as literal, skipping")
 
@@ -205,11 +205,11 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
     for member in cls.all_members.values():
         kind = member.kind
         if kind is Kind.ATTRIBUTE:
-            _process_attribute(member, cls, processed=processed)  # type: ignore[arg-type]
+            _process_attribute(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.FUNCTION:
-            _process_function(member, cls, processed=processed)  # type: ignore[arg-type]
+            _process_function(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.CLASS:
-            _process_class(member, processed=processed, schema=schema)  # type: ignore[arg-type]
+            _process_class(member, processed=processed, schema=schema)  # ty: ignore[invalid-argument-type]
 
 
 def _process_module(

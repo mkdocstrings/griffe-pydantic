@@ -29,11 +29,11 @@ _field_constraints = {
 
 
 def _model_fields(cls: Class) -> dict[str, Attribute]:
-    return {name: attr for name, attr in cls.all_members.items() if "pydantic-field" in attr.labels}  # type: ignore[misc]
+    return {name: attr for name, attr in cls.all_members.items() if "pydantic-field" in attr.labels}  # ty: ignore[invalid-return-type]
 
 
 def _model_validators(cls: Class) -> dict[str, Function]:
-    return {name: func for name, func in cls.all_members.items() if "pydantic-validator" in func.labels}  # type: ignore[misc]
+    return {name: func for name, func in cls.all_members.items() if "pydantic-validator" in func.labels}  # ty: ignore[invalid-return-type]
 
 
 def _json_schema(model: type[BaseModel]) -> str:

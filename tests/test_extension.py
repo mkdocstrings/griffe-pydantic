@@ -11,7 +11,7 @@ from griffe import Extensions, temporary_inspected_package, temporary_visited_pa
 from griffe_pydantic._internal.extension import PydanticExtension
 
 if TYPE_CHECKING:
-    from mkdocstrings_handlers.python.handler import PythonHandler
+    from mkdocstrings_handlers.python import PythonHandler
 
 
 code = """
