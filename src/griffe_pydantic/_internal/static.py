@@ -43,42 +43,17 @@ def _extract_description(description: Expr | str) -> str | None:
         The extracted description string, or None if it cannot be extracted.
     """
     # If it's a call to dedent() or cleandoc(), extract the first argument
-    if isinstance(description, ExprCall):
-        func_path = description.function.canonical_path
-
-        if func_path == "textwrap.dedent":
-            # Get the first argument (the string to dedent)
-            if description.arguments and isinstance(description.arguments[0], str):
-                try:
-                    import textwrap  # noqa: PLC0415
-
-                    text = ast.literal_eval(description.arguments[0])
-                    return textwrap.dedent(text)
-                except ValueError:
-                    _logger.debug(f"Could not parse dedent argument as literal: {description.arguments[0]}")
-                    return None
-        elif func_path == "inspect.cleandoc":  # noqa: SIM102
-            # Get the first argument (the string to cleandoc)
-            if description.arguments and isinstance(description.arguments[0], str):
-                try:
-                    import inspect  # noqa: PLC0415
-
-                    text = ast.literal_eval(description.arguments[0])
-                    return inspect.cleandoc(text)
-                except ValueError:
-                    _logger.debug(f"Could not parse cleandoc argument as literal: {description.arguments[0]}")
-                    return None
-        # For other function calls, we can't extract the description
-        _logger.debug(f"Cannot extract description from function call: {func_path}")
-        return None
+    if (isinstance(description, ExprCall) and
+        description.function.canonical_path in ("textwrap.dedent", "inspect.cleandoc") and
+        description.arguments):
+            description = description.arguments[0]
 
     # For plain strings, just evaluate them
     if isinstance(description, str):
         try:
             return ast.literal_eval(description)
         except ValueError:
-            _logger.debug(f"Could not parse description as literal: {description}")
-            return None
+            pass
 
     return None
 
