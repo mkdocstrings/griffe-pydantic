@@ -58,6 +58,14 @@ See [MkDocs usage in Griffe's documentation](https://mkdocstrings.github.io/grif
 
 ## Sponsors
 
+**Silver sponsors**
+
+**Bronze sponsors**
+
+______________________________________________________________________
+
+*And 7 more private sponsor(s).*
+
 ## Examples
 
 ```
