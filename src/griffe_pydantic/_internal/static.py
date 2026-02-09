@@ -42,13 +42,15 @@ def _extract_description(description: Expr | str) -> str | None:
     Returns:
         The extracted description string, or None if it cannot be extracted.
     """
-    # If it's a call to dedent() or cleandoc(), extract the first argument
-    if (isinstance(description, ExprCall) and
-        description.function.canonical_path in ("textwrap.dedent", "inspect.cleandoc") and
-        description.arguments):
-            description = description.arguments[0]
+    # If it's a call to dedent() or cleandoc(), extract the first argument.
+    if (
+        isinstance(description, ExprCall)
+        and description.function.canonical_path in ("textwrap.dedent", "inspect.cleandoc")
+        and description.arguments
+    ):
+        description = description.arguments[0]
 
-    # For plain strings, just evaluate them
+    # For plain strings, just evaluate them.
     if isinstance(description, str):
         try:
             return ast.literal_eval(description)
