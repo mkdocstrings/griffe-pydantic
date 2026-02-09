@@ -31,6 +31,35 @@ if TYPE_CHECKING:
 _logger = get_logger("griffe_pydantic")
 
 
+def _extract_description(description: Expr | str) -> str | None:
+    """Extract a description value from a Field argument.
+
+    Handles plain string literals as well as calls to textwrap.dedent() and inspect.cleandoc().
+
+    Parameters:
+        description: The description expression from a Field call.
+
+    Returns:
+        The extracted description string, or None if it cannot be extracted.
+    """
+    # If it's a call to dedent() or cleandoc(), extract the first argument.
+    if (
+        isinstance(description, ExprCall)
+        and description.function.canonical_path in ("textwrap.dedent", "inspect.cleandoc")
+        and description.arguments
+    ):
+        description = description.arguments[0]
+
+    # For plain strings, just evaluate them.
+    if isinstance(description, str):
+        try:
+            return ast.literal_eval(description)
+        except ValueError:
+            pass
+
+    return None
+
+
 def _inherits_pydantic(cls: Class) -> bool:
     """Tell whether a class inherits from a Pydantic model.
 
@@ -164,10 +193,10 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     attr.extra[common._self_namespace]["constraints"] = constraints
 
     # Populate docstring from the field's `description` argument.
-    if not attr.docstring and (docstring := kwargs.get("description")):
-        try:
-            attr.docstring = Docstring(ast.literal_eval(docstring), parent=attr)  # ty: ignore[invalid-argument-type]
-        except ValueError:
+    if not attr.docstring and (description_expr := kwargs.get("description")):
+        if description_text := _extract_description(description_expr):
+            attr.docstring = Docstring(description_text, parent=attr)
+        else:
             _logger.debug(f"Could not parse description of field '{attr.path}' as literal, skipping")
 
 
