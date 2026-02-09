@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.3.0](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.3.0) - 2026-02-09
+
+<small>[Compare with 1.2.0](https://github.com/mkdocstrings/griffe-pydantic/compare/1.2.0...1.3.0)</small>
+
+### Features
+
+- Support dedent/cleandoc for Field description ([ab6c0dc](https://github.com/mkdocstrings/griffe-pydantic/commit/ab6c0dcd50c04b60d576b938b9e128a75e0de1e2) by Christopher Barber). [Issue-50](https://github.com/mkdocstrings/griffe-pydantic/issues/50), [PR-52](https://github.com/mkdocstrings/griffe-pydantic/pull/52)
+- Support Pydantic's `PrivateAttr` ([9491921](https://github.com/mkdocstrings/griffe-pydantic/commit/9491921fb1c57c85ffd0b1c1e2e24784d4730c3f) by Daniel Gafni). [Issue-43](https://github.com/mkdocstrings/griffe-pydantic/issues/43), [PR-49](https://github.com/mkdocstrings/griffe-pydantic/pull/49)
+
 ## [1.2.0](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.2.0) - 2026-01-13
 
 <small>[Compare with 1.1.8](https://github.com/mkdocstrings/griffe-pydantic/compare/1.1.8...1.2.0)</small>
