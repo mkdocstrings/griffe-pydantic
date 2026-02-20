@@ -147,6 +147,13 @@ name = "python"
 class = "python"
 validator = "markdown_exec.validator"
 format = "markdown_exec.formatter"
+[[project.markdown_extensions.pymdownx.superfences.custom_fences]]
+name = "md"
+class = "markdown"
+validator = "markdown_exec.validator"
+format = "markdown_exec.formatter"
+[project.markdown_extensions.pymdownx.blocks.tab]
+alternate_style = true
 [project.markdown_extensions.pymdownx.tabbed]
 alternate_style = true
 [project.markdown_extensions.pymdownx.tasklist]
@@ -159,7 +166,7 @@ configurations = [{targets.include = ["reference/api.md"]}]
 # Plugins configuration
 # ----------------------------------------------------------------------------
 [project.plugins.mkdocstrings.handlers.python]
-paths = ["src"]
+paths = ["src", "examples"]
 inventories = ["https://docs.python.org/3/objects.inv"]
 
 [project.plugins.mkdocstrings.handlers.python.options]
