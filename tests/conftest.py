@@ -49,7 +49,7 @@ def fixture_mkdocs_conf(request: pytest.FixtureRequest, tmp_path: Path) -> Itera
 @pytest.fixture(name="python_handler")
 def fixture_python_handler(mkdocs_conf: MkDocsConfig) -> PythonHandler:
     """Return a PythonHandler instance."""
-    handlers = mkdocs_conf.plugins["mkdocstrings"].handlers  # ty: ignore[possibly-missing-attribute]
+    handlers = mkdocs_conf.plugins["mkdocstrings"].handlers  # ty: ignore[unresolved-attribute]
     handler = handlers.get_handler("python")
     handler._update_env(md=Markdown(extensions=["toc"]))
     handler.env.filters["convert_markdown"] = lambda *args, **kwargs: str(args) + str(kwargs)

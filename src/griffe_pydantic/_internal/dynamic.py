@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any
 
 from griffe import (
     Attribute,
@@ -12,6 +12,10 @@ from griffe import (
 )
 
 from griffe_pydantic._internal import common
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
+
 
 _logger = get_logger("griffe_pydantic")
 
