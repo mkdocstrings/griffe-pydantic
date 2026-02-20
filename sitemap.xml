@@ -1,13 +1,24 @@
-{#-
-  This file was automatically generated - do not edit
--#}
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  {%- for page in pages -%}
-    {%- if page.canonical_url %}
       <url>
-        <loc>{{ page.canonical_url }}</loc>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/</loc>
       </url>
-    {%- endif -%}
-  {%- endfor %}
+      <url>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/changelog/</loc>
+      </url>
+      <url>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/credits/</loc>
+      </url>
+      <url>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/license/</loc>
+      </url>
+      <url>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/reference/api/</loc>
+      </url>
+      <url>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/contributing/</loc>
+      </url>
+      <url>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/code_of_conduct/</loc>
+      </url>
 </urlset>
