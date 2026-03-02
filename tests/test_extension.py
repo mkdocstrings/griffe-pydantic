@@ -611,3 +611,49 @@ def test_typing_extensions_annotated_fields() -> None:
         assert str(package["Model.b"].annotation) == "int"
         # Constraints declared inside `Annotated` are collected too.
         assert package["Model.a"].extra["griffe_pydantic"]["constraints"] == {"le": "10"}
+
+
+def test_serialize_by_alias_disabled_static() -> None:
+    """Test that without serialize_by_alias, static analysis uses Python attribute names."""
+    code = """
+    from pydantic import BaseModel, Field
+
+    class Model(BaseModel):
+        internal_name: str = Field(default="test", serialization_alias="external_name")
+        regular_field: int = Field(default=42)
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False, serialize_by_alias=False)),
+    ) as package:
+        fields = package["Model"].extra["griffe_pydantic"]["fields"]()
+        assert "internal_name" in fields
+        assert "regular_field" in fields
+        assert "external_name" not in fields
+
+
+@pytest.mark.parametrize("analysis", ["static", "dynamic"])
+def test_serialize_by_alias_enabled(analysis: str) -> None:
+    """Test that serialize_by_alias extension setting uses serialization_alias as the field name."""
+    code = """
+    from pydantic import BaseModel, Field
+
+    class Model(BaseModel):
+        internal_name: str = Field(default="test", serialization_alias="external_name")
+        regular_field: int = Field(default=42)
+    """
+    loader = {"static": temporary_visited_package, "dynamic": temporary_inspected_package}[analysis]
+    with loader(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False, serialize_by_alias=True)),
+        search_sys_path=analysis == "dynamic",
+    ) as package:
+        model = package["Model"]
+        assert model.labels == {"pydantic-model"}
+
+        fields = model.extra["griffe_pydantic"]["fields"]()
+        assert "internal_name" not in fields
+        assert "regular_field" in fields
+        assert "external_name" in fields

@@ -40,14 +40,17 @@ _logger = get_logger("griffe_pydantic")
 class PydanticExtension(Extension):
     """Griffe extension for Pydantic."""
 
-    def __init__(self, *, schema: bool = False) -> None:
+    def __init__(self, *, schema: bool = False, serialize_by_alias: bool = False) -> None:
         """Initialize the extension.
 
         Parameters:
             schema: Whether to compute and store the JSON schema of models.
+            serialize_by_alias: Whether to use `serialization_alias` as the field name in documentation.
+                When enabled, fields with a `serialization_alias` will be keyed by that alias instead of their Python attribute name.
         """
         super().__init__()
         self._schema = schema
+        self._serialize_by_alias = serialize_by_alias
         self._processed: set[str] = set()
         self._recorded: list[tuple[ObjectNode, Class]] = []
         self._attribute_declarations: dict[str, Attribute | None] = {}
@@ -57,13 +60,14 @@ class PydanticExtension(Extension):
         # Process bases first so inherited fields can remain aliases to their definitions.
         for node, cls in sorted(self._recorded, key=lambda item: len(item[0].obj.__mro__)):
             self._processed.add(cls.canonical_path)
-            dynamic._process_class(node.obj, cls, processed=self._processed, schema=self._schema)
+            dynamic._process_class(node.obj, cls, processed=self._processed, schema=self._schema, serialize_by_alias=self._serialize_by_alias)
 
         static._process_module(
             pkg,
             processed=self._processed,
             declarations=self._attribute_declarations,
             schema=self._schema,
+            serialize_by_alias=self._serialize_by_alias,
         )
 
     def on_attribute_instance(
