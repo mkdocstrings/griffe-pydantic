@@ -74,6 +74,7 @@ def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed
     # Store serialization_alias if present
     if obj.serialization_alias:
         attr.extra[common._self_namespace]["serialization_alias"] = obj.serialization_alias
+        attr.name = obj.serialization_alias
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (docstring := obj.description):
