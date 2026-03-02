@@ -203,6 +203,7 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
                 attr.extra[common._self_namespace]["serialization_alias"] = ast.literal_eval(serialization_alias)
             except ValueError:
                 attr.extra[common._self_namespace]["serialization_alias"] = serialization_alias
+            attr.name = attr.extra[common._self_namespace]["serialization_alias"]
         elif isinstance(serialization_alias, (ExprName, Expr)):
             # For now, we can't resolve expressions at static analysis time
             _logger.debug(f"Could not resolve serialization_alias expression for field '{attr.path}'")
