@@ -419,13 +419,12 @@ def test_serialize_by_alias_enabled(analysis: str) -> None:
         internal_name: str = Field(default="test", serialization_alias="external_name")
         regular_field: int = Field(default=42)
     """
-    loader = {"static": temporary_visited_package, "dynamic": temporary_inspected_package}[analysis]
-    with loader(
+    with temporary_visited_package(
         "package",
         modules={"__init__.py": code},
         extensions=Extensions(PydanticExtension(schema=False, serialize_by_alias=True)),
-        search_sys_path=analysis == "dynamic",
     ) as package:
+        
         model = package["Model"]
         assert model.labels == {"pydantic-model"}
 
