@@ -189,8 +189,23 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     attr.labels.discard("instance-attribute")
 
     attr.value = kwargs.get("default")
-    constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description"}}
+    constraints = {
+        kwarg: value
+        for kwarg, value in kwargs.items()
+        if kwarg not in {"default", "description", "serialization_alias"}
+    }
     attr.extra[common._self_namespace]["constraints"] = constraints
+
+    # Store serialization_alias if present
+    if serialization_alias := kwargs.get("serialization_alias"):
+        if isinstance(serialization_alias, str):
+            try:
+                attr.extra[common._self_namespace]["serialization_alias"] = ast.literal_eval(serialization_alias)
+            except ValueError:
+                attr.extra[common._self_namespace]["serialization_alias"] = serialization_alias
+        elif isinstance(serialization_alias, (ExprName, Expr)):
+            # For now, we can't resolve expressions at static analysis time
+            _logger.debug(f"Could not resolve serialization_alias expression for field '{attr.path}'")
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (description_expr := kwargs.get("description")):
@@ -215,7 +230,7 @@ def _process_function(func: Function, cls: Class, *, processed: set[str]) -> Non
         common._process_function(func, cls, fields)
 
 
-def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> None:
+def _process_class(cls: Class, *, processed: set[str], schema: bool = False, serialize_by_alias: bool = False) -> None:
     """Finalize the Pydantic model data."""
     if cls.canonical_path in processed:
         return
@@ -225,7 +240,7 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
 
     processed.add(cls.canonical_path)
 
-    common._process_class(cls)
+    common._process_class(cls, serialize_by_alias=serialize_by_alias)
 
     if schema:
         import_path: Path | list[Path] = cls.package.filepath
@@ -240,7 +255,9 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
             _logger.debug(f"Could not import class {cls.path} for JSON schema")
             return
         try:
-            cls.extra[common._self_namespace]["schema"] = common._json_schema(true_class)
+            cls.extra[common._self_namespace]["schema"] = common._json_schema(
+                true_class,
+            )
         except Exception as exc:  # noqa: BLE001
             # Schema generation can fail and raise Pydantic errors.
             _logger.debug("Failed to generate schema for %s: %s", cls.path, exc)
@@ -252,7 +269,7 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
         elif kind is Kind.FUNCTION:
             _process_function(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.CLASS:
-            _process_class(member, processed=processed, schema=schema)  # ty: ignore[invalid-argument-type]
+            _process_class(member, processed=processed, schema=schema, serialize_by_alias=serialize_by_alias)  # ty: ignore[invalid-argument-type]
 
 
 def _process_module(
@@ -260,6 +277,7 @@ def _process_module(
     *,
     processed: set[str],
     schema: bool = False,
+    serialize_by_alias: bool = False,
 ) -> None:
     """Handle Pydantic models in a module."""
     if mod.canonical_path in processed:
@@ -269,9 +287,9 @@ def _process_module(
     for cls in mod.classes.values():
         # Don't process aliases, real classes will be processed at some point anyway.
         if not cls.is_alias:
-            _process_class(cls, processed=processed, schema=schema)
+            _process_class(cls, processed=processed, schema=schema, serialize_by_alias=serialize_by_alias)
 
     for submodule in mod.modules.values():
         # Same for modules, don't process aliased ones.
         if not submodule.is_alias:
-            _process_module(submodule, processed=processed, schema=schema)
+            _process_module(submodule, processed=processed, schema=schema, serialize_by_alias=serialize_by_alias)
