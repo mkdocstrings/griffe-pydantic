@@ -216,6 +216,30 @@ def test_ignoring_properties() -> None:
         assert "pydantic-field" not in package["Model.a"].labels
 
 
+def test_extra_bases() -> None:
+    """Test extra_bases functionality with custom base classes."""
+    code = """
+    from pydantic import BaseModel, Field
+
+    class CustomBase(BaseModel):
+        '''A custom base model.'''
+        pass
+
+    class CustomModel(CustomBase):
+        '''A model inheriting from custom base.'''
+        field1: str = Field(..., description="Test field")
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False, extra_bases=["package.CustomBase"])),
+    ) as package:
+        # Both CustomBase and CustomModel should be detected
+        assert "pydantic-model" in package["CustomBase"].labels
+        assert "pydantic-model" in package["CustomModel"].labels
+        assert "pydantic-field" in package["CustomModel.field1"].labels
+
+
 def test_process_non_model_base_class_fields() -> None:
     """Fields in a non-model base class must be processed."""
     code = """

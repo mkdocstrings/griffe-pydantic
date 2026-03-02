@@ -73,18 +73,31 @@ def _yield_public_objects(
 
 
 @pytest.fixture(name="modulelevel_internal_objects", scope="module")
-def _fixture_modulelevel_internal_objects(internal_api: griffe.Module) -> list[griffe.Object | griffe.Alias]:
+def _fixture_modulelevel_internal_objects(
+    internal_api: griffe.Module,
+) -> list[griffe.Object | griffe.Alias]:
     return list(_yield_public_objects(internal_api, modulelevel=True))
 
 
 @pytest.fixture(name="internal_objects", scope="module")
-def _fixture_internal_objects(internal_api: griffe.Module) -> list[griffe.Object | griffe.Alias]:
+def _fixture_internal_objects(
+    internal_api: griffe.Module,
+) -> list[griffe.Object | griffe.Alias]:
     return list(_yield_public_objects(internal_api, modulelevel=False, special=True))
 
 
 @pytest.fixture(name="public_objects", scope="module")
-def _fixture_public_objects(public_api: griffe.Module) -> list[griffe.Object | griffe.Alias]:
-    return list(_yield_public_objects(public_api, modulelevel=False, inherited=True, special=True))
+def _fixture_public_objects(
+    public_api: griffe.Module,
+) -> list[griffe.Object | griffe.Alias]:
+    return list(
+        _yield_public_objects(
+            public_api,
+            modulelevel=False,
+            inherited=True,
+            special=True,
+        ),
+    )
 
 
 @pytest.fixture(name="inventory", scope="module")
@@ -96,7 +109,9 @@ def _fixture_inventory() -> Inventory:
         return Inventory.parse_sphinx(file)
 
 
-def test_exposed_objects(modulelevel_internal_objects: list[griffe.Object | griffe.Alias]) -> None:
+def test_exposed_objects(
+    modulelevel_internal_objects: list[griffe.Object | griffe.Alias],
+) -> None:
     """All public objects in the internal API are exposed under `griffe_pydantic`."""
     not_exposed = [
         obj.path
@@ -106,7 +121,9 @@ def test_exposed_objects(modulelevel_internal_objects: list[griffe.Object | grif
     assert not not_exposed, "Objects not exposed:\n" + "\n".join(sorted(not_exposed))
 
 
-def test_unique_names(modulelevel_internal_objects: list[griffe.Object | griffe.Alias]) -> None:
+def test_unique_names(
+    modulelevel_internal_objects: list[griffe.Object | griffe.Alias],
+) -> None:
     """All internal objects have unique names."""
     names_to_paths = defaultdict(list)
     for obj in modulelevel_internal_objects:
@@ -133,7 +150,10 @@ def test_single_locations(public_api: griffe.Module) -> None:
     )
 
 
-def test_api_matches_inventory(inventory: Inventory, public_objects: list[griffe.Object | griffe.Alias]) -> None:
+def test_api_matches_inventory(
+    inventory: Inventory,
+    public_objects: list[griffe.Object | griffe.Alias],
+) -> None:
     """All public objects are added to the inventory."""
     ignore_names = {"__getattr__", "__init__", "__repr__", "__str__", "__post_init__"}
     not_in_inventory = [
