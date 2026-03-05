@@ -20,5 +20,5 @@ class UserModel(BaseModel):
     email_address: str
     """User's email address."""
 
-    is_active: bool = Field(default=TRUE)
+    is_active: bool = Field(default=True)
     """Whether the user is active, serialized as 'active'."""
