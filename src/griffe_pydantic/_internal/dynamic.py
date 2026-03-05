@@ -20,7 +20,14 @@ if TYPE_CHECKING:
 _logger = get_logger("griffe_pydantic")
 
 
-def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[str]) -> None:
+def _process_attribute(
+    obj: Any,
+    attr: Attribute,
+    cls: Class,
+    *,
+    processed: set[str],
+    serialize_by_alias: bool = False,
+) -> None:
     """Handle Pydantic fields."""
     from pydantic.fields import FieldInfo  # noqa: PLC0415
 
@@ -42,6 +49,11 @@ def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[
             constraints[constraint] = value
     attr.extra[common._self_namespace]["constraints"] = constraints
 
+    # Store serialization_alias if present
+    if serialize_by_alias and obj.serialization_alias:
+        attr.extra[common._self_namespace]["serialization_alias"] = obj.serialization_alias
+        attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_attribute_alias.html.jinja"
+
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (docstring := obj.description):
         attr.docstring = Docstring(docstring, parent=attr)
@@ -56,7 +68,14 @@ def _process_function(obj: Callable, func: Function, cls: Class, *, processed: s
         common._process_function(func, cls, dec_info.fields)
 
 
-def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool = False) -> None:
+def _process_class(
+    obj: type,
+    cls: Class,
+    *,
+    processed: set[str],
+    schema: bool = False,
+    serialize_by_alias: bool = False,
+) -> None:
     """Detect and prepare Pydantic models."""
     common._process_class(cls)
     if schema:
@@ -68,6 +87,12 @@ def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool =
     for member in cls.all_members.values():
         kind = member.kind
         if kind is Kind.ATTRIBUTE:
-            _process_attribute(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
+            _process_attribute(
+                getattr(obj, member.name),
+                member,  # ty: ignore[invalid-argument-type]
+                cls,
+                processed=processed,
+                serialize_by_alias=serialize_by_alias,
+            )
         elif kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]

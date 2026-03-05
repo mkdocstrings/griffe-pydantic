@@ -55,6 +55,10 @@ code = """
 
     class RegularClass(object):
         regular_attr = 1
+
+    class AliasClass(BaseModel):
+        internal_name: str = Field(default="test", serialization_alias="external_name")
+        regular_field: int = Field(default=42)
 """
 
 
@@ -65,7 +69,7 @@ def test_extension(analysis: str) -> None:
     with loader(
         "package",
         modules={"__init__.py": code},
-        extensions=Extensions(PydanticExtension(schema=True)),
+        extensions=Extensions(PydanticExtension(schema=True, serialize_by_alias=True)),
         search_sys_path=analysis == "dynamic",
     ) as package:
         assert package
@@ -81,6 +85,14 @@ def test_extension(analysis: str) -> None:
 
         schema = package.classes["ExampleModel"].extra["griffe_pydantic"]["schema"]
         assert schema.startswith('{\n  "description"')
+
+        assert "AliasClass" in package.classes
+        assert package.classes["AliasClass"].labels == {"pydantic-model"}
+
+        fields = package.classes["AliasClass"].extra["griffe_pydantic"]["fields"]()
+        assert "internal_name" not in fields
+        assert "regular_field" in fields
+        assert "external_name" in fields
 
 
 def test_imported_models() -> None:
@@ -387,3 +399,23 @@ def test_field_description_with_annotated_and_dedent() -> None:
         assert package["Model.field1"].docstring is not None
         assert "This is a multiline description." in package["Model.field1"].docstring.value
         assert "With multiple lines." in package["Model.field1"].docstring.value
+
+
+def test_serialize_by_alias_disabled_static() -> None:
+    """Test that without serialize_by_alias, static analysis uses Python attribute names."""
+    code = """
+    from pydantic import BaseModel, Field
+
+    class Model(BaseModel):
+        internal_name: str = Field(default="test", serialization_alias="external_name")
+        regular_field: int = Field(default=42)
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False, serialize_by_alias=False)),
+    ) as package:
+        fields = package["Model"].extra["griffe_pydantic"]["fields"]()
+        assert "internal_name" in fields
+        assert "regular_field" in fields
+        assert "external_name" not in fields
