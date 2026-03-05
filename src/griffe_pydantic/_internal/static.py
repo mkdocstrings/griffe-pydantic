@@ -96,7 +96,7 @@ def _pydantic_validator(func: Function) -> ExprCall | None:
     return None
 
 
-def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> None:
+def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str], serialize_by_alias: bool = False) -> None:
     """Handle Pydantic fields."""
     if attr.canonical_path in processed:
         return
@@ -197,13 +197,14 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     attr.extra[common._self_namespace]["constraints"] = constraints
 
     # Store serialization_alias if present
-    if serialization_alias := kwargs.get("serialization_alias"):
+    if serialize_by_alias and (serialization_alias := kwargs.get("serialization_alias")):
         if isinstance(serialization_alias, str):
             try:
                 attr.extra[common._self_namespace]["serialization_alias"] = ast.literal_eval(serialization_alias)
             except ValueError:
                 attr.extra[common._self_namespace]["serialization_alias"] = serialization_alias
-            attr.name = attr.extra[common._self_namespace]["serialization_alias"]
+            # Set the attribute template to the custom template, which will use the serialization_alias instead of the attribute name.
+            attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_attribute_alias.html.jinja"
         elif isinstance(serialization_alias, (ExprName, Expr)):
             # For now, we can't resolve expressions at static analysis time
             _logger.debug(f"Could not resolve serialization_alias expression for field '{attr.path}'")
@@ -241,7 +242,7 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False, ser
 
     processed.add(cls.canonical_path)
 
-    common._process_class(cls, serialize_by_alias=serialize_by_alias)
+    common._process_class(cls)
 
     if schema:
         import_path: Path | list[Path] = cls.package.filepath
@@ -266,7 +267,7 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False, ser
     for member in cls.all_members.values():
         kind = member.kind
         if kind is Kind.ATTRIBUTE:
-            _process_attribute(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
+            _process_attribute(member, cls, processed=processed, serialize_by_alias=serialize_by_alias)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.FUNCTION:
             _process_function(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.CLASS:
