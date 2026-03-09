@@ -22,17 +22,17 @@ _logger = get_logger("griffe_pydantic")
 class PydanticExtension(Extension):
     """Griffe extension for Pydantic."""
 
-    def __init__(self, *, schema: bool = False, serialize_by_alias: bool = False) -> None:
+    def __init__(self, *, schema: bool = False, show_as_alias: bool = False) -> None:
         """Initialize the extension.
 
         Parameters:
             schema: Whether to compute and store the JSON schema of models.
-            serialize_by_alias: Whether to use `serialization_alias` as the field name in documentation.
-                When enabled, fields with a `serialization_alias` will be keyed by that alias instead of their Python attribute name.
+            show_as_alias: Whether to use `alias` as the field name in documentation.
+                When enabled, fields with a `alias` will be keyed by that alias instead of their Python attribute name.
         """
         super().__init__()
         self._schema = schema
-        self._serialize_by_alias = serialize_by_alias
+        self._show_as_alias = show_as_alias
         self._processed: set[str] = set()
         self._recorded: list[tuple[ObjectNode, Class]] = []
 
@@ -45,13 +45,13 @@ class PydanticExtension(Extension):
                 cls,
                 processed=self._processed,
                 schema=self._schema,
-                serialize_by_alias=self._serialize_by_alias,
+                show_as_alias=self._show_as_alias,
             )
         static._process_module(
             pkg,
             processed=self._processed,
             schema=self._schema,
-            serialize_by_alias=self._serialize_by_alias,
+            show_as_alias=self._show_as_alias,
         )
 
     def on_class_instance(self, *, node: ast.AST | ObjectNode, cls: Class, **kwargs: Any) -> None:  # noqa: ARG002

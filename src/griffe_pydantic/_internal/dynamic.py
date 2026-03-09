@@ -26,7 +26,7 @@ def _process_attribute(
     cls: Class,
     *,
     processed: set[str],
-    serialize_by_alias: bool = False,
+    show_as_alias: bool = False,
 ) -> None:
     """Handle Pydantic fields."""
     from pydantic.fields import FieldInfo  # noqa: PLC0415
@@ -49,9 +49,9 @@ def _process_attribute(
             constraints[constraint] = value
     attr.extra[common._self_namespace]["constraints"] = constraints
 
-    # Store serialization_alias if present
-    if serialize_by_alias and obj.serialization_alias:
-        attr.extra[common._self_namespace]["serialization_alias"] = obj.serialization_alias
+    # Store alias if present
+    if show_as_alias and obj.alias:
+        attr.extra[common._self_namespace]["alias"] = obj.alias
         attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_attribute_alias.html.jinja"
 
     # Populate docstring from the field's `description` argument.
@@ -74,7 +74,7 @@ def _process_class(
     *,
     processed: set[str],
     schema: bool = False,
-    serialize_by_alias: bool = False,
+    show_as_alias: bool = False,
 ) -> None:
     """Detect and prepare Pydantic models."""
     common._process_class(cls)
@@ -92,7 +92,26 @@ def _process_class(
                 member,  # ty: ignore[invalid-argument-type]
                 cls,
                 processed=processed,
-                serialize_by_alias=serialize_by_alias,
+                show_as_alias=show_as_alias,
             )
         elif kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
+
+    # Process model fields that may not have been discovered by griffe
+    if hasattr(obj, "model_fields") and isinstance(obj.model_fields, dict):
+        for field_name, field_info in obj.model_fields.items():
+            if field_name not in cls.all_members:
+                # Create an Attribute object for this field
+                attr = Attribute(
+                    name=field_name,
+                    lineno=0,
+                    endlineno=0,
+                )
+                cls.members[field_name] = attr  # ty: ignore[invalid-assignment]
+                _process_attribute(
+                    field_info,
+                    attr,
+                    cls,
+                    processed=processed,
+                    show_as_alias=show_as_alias,
+                )
