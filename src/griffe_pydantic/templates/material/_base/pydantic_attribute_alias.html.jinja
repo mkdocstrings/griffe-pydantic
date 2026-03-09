@@ -33,7 +33,7 @@ Context:
 
     {# {% set attribute_name = attribute.path if show_full_path else attribute.name %} #}
     {# TODO some better way to visualize the alias #}
-    {% set attribute_name = attribute.extra.griffe_pydantic.serialization_alias %}
+    {% set attribute_name = attribute.extra.griffe_pydantic.alias %}
 
     {% if not root or config.show_root_heading %}
       {% filter heading(

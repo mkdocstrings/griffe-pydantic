@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 _logger = get_logger("griffe_pydantic")
 
 
-def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed: set[str], serialize_by_alias: bool = False) -> None:
+def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed: set[str], show_as_alias: bool = False) -> None:
     """Handle Pydantic fields."""
     from pydantic_core import PydanticUndefined  # noqa: PLC0415
 
@@ -71,9 +71,9 @@ def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed
             constraints[constraint] = value
     attr.extra[common._self_namespace]["constraints"] = constraints
 
-    # Store serialization_alias if present
-    if serialize_by_alias and obj.serialization_alias:
-        attr.extra[common._self_namespace]["serialization_alias"] = obj.serialization_alias
+    # Store alias if present
+    if show_as_alias and obj.alias:
+        attr.extra[common._self_namespace]["alias"] = obj.alias
         attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_attribute_alias.html.jinja"
 
     # Populate docstring from the field's `description` argument.
@@ -90,7 +90,7 @@ def _process_function(obj: Callable, func: Function, cls: Class, *, processed: s
         common._process_function(func, cls, dec_info.fields)
 
 
-def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], schema: bool = False, serialize_by_alias: bool = False) -> None:
+def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], schema: bool = False, show_as_alias: bool = False) -> None:
     """Detect and prepare Pydantic models."""
     common._process_class(cls)
     cls.extra[common._self_namespace]["config"] = obj.model_config
@@ -109,8 +109,27 @@ def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], sch
             cls.set_member(name, member)
         elif isinstance(member, Alias):
             member = member.final_target
-        _process_attribute(field_info, member, cls, processed=processed, serialize_by_alias=serialize_by_alias)  # ty: ignore[invalid-argument-type]
+        _process_attribute(field_info, member, cls, processed=processed, show_as_alias=show_as_alias)  # ty: ignore[invalid-argument-type]
 
     for member in cls.all_members.values():
         if member.kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
+
+    # Process model fields that may not have been discovered by griffe
+    if hasattr(obj, "model_fields") and isinstance(obj.model_fields, dict):
+        for field_name, field_info in obj.model_fields.items():
+            if field_name not in cls.all_members:
+                # Create an Attribute object for this field
+                attr = Attribute(
+                    name=field_name,
+                    lineno=0,
+                    endlineno=0,
+                )
+                cls.members[field_name] = attr  # ty: ignore[invalid-assignment]
+                _process_attribute(
+                    field_info,
+                    attr,
+                    cls,
+                    processed=processed,
+                    show_as_alias=show_as_alias,
+                )
