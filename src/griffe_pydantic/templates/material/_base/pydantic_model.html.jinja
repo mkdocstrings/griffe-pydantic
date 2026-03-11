@@ -11,7 +11,7 @@
       </details>
     {% endif %}
   {% endblock schema %}
-    
+
   {% block config scoped %}
     {% if class.extra.griffe_pydantic.config %}
       <p>Config:</p>
@@ -31,6 +31,9 @@
           {% for name, field in fields.items() %}
             <li>
               <code><autoref optional hover identifier="{{ field.path }}">{{ name }}</autoref></code>
+              {% if field.extra.griffe_pydantic.alias %}
+                (<code><em>{{ field.extra.griffe_pydantic.alias }}</em></code>)
+              {% endif %}
               {% with expression = field.annotation %}
                 (<code>{% include "expression.html.jinja" with context %}</code>)
               {% endwith %}

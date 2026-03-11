@@ -26,7 +26,7 @@ def _process_attribute(
     cls: Class,
     *,
     processed: set[str],
-    show_as_alias: bool = False,
+    show_alias: bool = False,
 ) -> None:
     """Handle Pydantic fields."""
     from pydantic.fields import FieldInfo  # noqa: PLC0415
@@ -50,7 +50,7 @@ def _process_attribute(
     attr.extra[common._self_namespace]["constraints"] = constraints
 
     # Store alias if present
-    if show_as_alias and obj.alias:
+    if show_alias and obj.alias:
         attr.extra[common._self_namespace]["alias"] = obj.alias
         attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_attribute_alias.html.jinja"
 
@@ -74,7 +74,7 @@ def _process_class(
     *,
     processed: set[str],
     schema: bool = False,
-    show_as_alias: bool = False,
+    show_alias: bool = False,
 ) -> None:
     """Detect and prepare Pydantic models."""
     common._process_class(cls)
@@ -92,7 +92,7 @@ def _process_class(
                 member,  # ty: ignore[invalid-argument-type]
                 cls,
                 processed=processed,
-                show_as_alias=show_as_alias,
+                show_alias=show_alias,
             )
         elif kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
@@ -113,5 +113,5 @@ def _process_class(
                     attr,
                     cls,
                     processed=processed,
-                    show_as_alias=show_as_alias,
+                    show_alias=show_alias,
                 )
