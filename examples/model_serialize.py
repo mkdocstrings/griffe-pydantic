@@ -4,7 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class UserModel(BaseModel):
     """A user model with serialization aliases.
 
-    When the extension is configured with `show_as_alias=True`, fields with
+    When the extension is configured with `show_alias=True`, fields with
     `alias` will appear under their alias names in the documentation.
     """
 

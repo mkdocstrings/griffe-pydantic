@@ -52,7 +52,7 @@ hide:
 
 ### Show as alias
 
-When the extension is configured with `show_as_alias=True`, fields with a `alias` will appear under their alias names in the documentation. This is useful for APIs where the serialized output uses different field names than the Python attribute names. See [Pydantic's alias documentation](https://docs.pydantic.dev/latest/concepts/alias/) for more information.
+When the extension is configured with `show_alias=True`, fields with a `alias` will appear under their alias names in the documentation. This is useful for APIs where the serialized output uses different field names than the Python attribute names. See [Pydantic's alias documentation](https://docs.pydantic.dev/latest/concepts/alias/) for more information.
 
 To enable this feature in your documentation configuration, configure the extension as follows:
 
@@ -63,7 +63,7 @@ plugins:
         python:
           extensions:
             - griffe_pydantic:
-                show_as_alias: true
+                show_alias: true
 ```
 
 Or use the local configuration:
@@ -73,7 +73,7 @@ Or use the local configuration:
     options:
       extensions:
       - griffe_pydantic:
-          show_as_alias: true
+          show_alias: true
 ```
 
 
@@ -92,7 +92,7 @@ Or use the local configuration:
     options:
       heading_level: 4
       extensions:
-      - griffe_pydantic: {show_as_alias: false}
+      - griffe_pydantic: {show_alias: false}
       skip_local_inventory: true
 ```
 
@@ -105,7 +105,7 @@ Or use the local configuration:
     options:
       heading_level: 4
       extensions:
-      - griffe_pydantic: {show_as_alias: true}
+      - griffe_pydantic: {show_alias: true}
       skip_local_inventory: true
 ```
 

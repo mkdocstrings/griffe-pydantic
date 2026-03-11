@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 _logger = get_logger("griffe_pydantic")
 
 
-def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed: set[str], show_as_alias: bool = False) -> None:
+def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed: set[str], show_alias: bool = False) -> None:
     """Handle Pydantic fields."""
     from pydantic_core import PydanticUndefined  # noqa: PLC0415
 
@@ -72,7 +72,7 @@ def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed
     attr.extra[common._self_namespace]["constraints"] = constraints
 
     # Store alias if present
-    if show_as_alias and obj.alias:
+    if show_alias and obj.alias:
         attr.extra[common._self_namespace]["alias"] = obj.alias
         attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_attribute_alias.html.jinja"
 
@@ -90,7 +90,7 @@ def _process_function(obj: Callable, func: Function, cls: Class, *, processed: s
         common._process_function(func, cls, dec_info.fields)
 
 
-def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], schema: bool = False, show_as_alias: bool = False) -> None:
+def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], schema: bool = False, show_alias: bool = False) -> None:
     """Detect and prepare Pydantic models."""
     common._process_class(cls)
     cls.extra[common._self_namespace]["config"] = obj.model_config
@@ -109,7 +109,7 @@ def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], sch
             cls.set_member(name, member)
         elif isinstance(member, Alias):
             member = member.final_target
-        _process_attribute(field_info, member, cls, processed=processed, show_as_alias=show_as_alias)  # ty: ignore[invalid-argument-type]
+        _process_attribute(field_info, member, cls, processed=processed, show_alias=show_alias)  # ty: ignore[invalid-argument-type]
 
     for member in cls.all_members.values():
         if member.kind is Kind.FUNCTION:
@@ -131,5 +131,5 @@ def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], sch
                     attr,
                     cls,
                     processed=processed,
-                    show_as_alias=show_as_alias,
+                    show_alias=show_alias,
                 )

@@ -116,7 +116,7 @@ def _pydantic_validator(func: Function) -> ExprCall | None:
     return None
 
 
-def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str], show_as_alias: bool = False) -> None:
+def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str], show_alias: bool = False) -> None:
     """Handle Pydantic fields."""
     if attr.canonical_path in processed:
         return
@@ -217,7 +217,7 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str], show
     attr.extra[common._self_namespace]["constraints"] = constraints
 
     # Store alias if present
-    if show_as_alias and (alias := kwargs.get("alias")):
+    if show_alias and (alias := kwargs.get("alias")):
         if isinstance(alias, str):
             try:
                 attr.extra[common._self_namespace]["alias"] = ast.literal_eval(alias)
@@ -258,7 +258,7 @@ def _process_class(
     processed: set[str],
     declarations: dict[str, Attribute | None],
     schema: bool = False,
-    show_as_alias: bool = False,
+    show_alias: bool = False,
 ) -> None:
     """Finalize the Pydantic model data."""
     if cls.canonical_path in processed:
@@ -310,11 +310,11 @@ def _process_class(
     for member in cls.all_members.values():
         kind = member.kind
         if kind is Kind.ATTRIBUTE:
-            _process_attribute(member, cls, processed=processed, show_as_alias=show_as_alias)  # ty: ignore[invalid-argument-type]
+            _process_attribute(member, cls, processed=processed, show_alias=show_alias)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.FUNCTION:
             _process_function(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.CLASS:
-            _process_class(member, processed=processed, declarations=declarations, schema=schema, show_as_alias=show_as_alias)  # ty: ignore[invalid-argument-type]
+            _process_class(member, processed=processed, declarations=declarations, schema=schema, show_alias=show_alias)  # ty: ignore[invalid-argument-type]
 
 
 def _process_module(
@@ -323,7 +323,7 @@ def _process_module(
     processed: set[str],
     declarations: dict[str, Attribute | None],
     schema: bool = False,
-    show_as_alias: bool = False,
+    show_alias: bool = False,
 ) -> None:
     """Handle Pydantic models in a module."""
     if mod.canonical_path in processed:
@@ -333,9 +333,9 @@ def _process_module(
     for cls in mod.classes.values():
         # Don't process aliases, real classes will be processed at some point anyway.
         if not cls.is_alias:
-            _process_class(cls, processed=processed, declarations=declarations, schema=schema, show_as_alias=show_as_alias)
+            _process_class(cls, processed=processed, declarations=declarations, schema=schema, show_alias=show_alias)
 
     for submodule in mod.modules.values():
         # Same for modules, don't process aliased ones.
         if not submodule.is_alias:
-            _process_module(submodule, processed=processed, declarations=declarations, schema=schema, show_as_alias=show_as_alias)
+            _process_module(submodule, processed=processed, declarations=declarations, schema=schema, show_alias=show_alias)
