@@ -69,7 +69,7 @@ def test_extension(analysis: str) -> None:
     with loader(
         "package",
         modules={"__init__.py": code},
-        extensions=Extensions(PydanticExtension(schema=True, show_alias=True)),
+        extensions=Extensions(PydanticExtension(schema=True)),
         search_sys_path=analysis == "dynamic",
     ) as package:
         assert package
@@ -399,23 +399,3 @@ def test_field_description_with_annotated_and_dedent() -> None:
         assert package["Model.field1"].docstring is not None
         assert "This is a multiline description." in package["Model.field1"].docstring.value
         assert "With multiple lines." in package["Model.field1"].docstring.value
-
-
-def test_show_alias_disabled_static() -> None:
-    """Test that without show_alias, static analysis uses Python attribute names."""
-    code = """
-    from pydantic import BaseModel, Field
-
-    class Model(BaseModel):
-        internal_name: str = Field(default="test", alias="external_name")
-        regular_field: int = Field(default=42)
-    """
-    with temporary_visited_package(
-        "package",
-        modules={"__init__.py": code},
-        extensions=Extensions(PydanticExtension(schema=False, show_alias=False)),
-    ) as package:
-        fields = package["Model"].extra["griffe_pydantic"]["fields"]()
-        assert "internal_name" in fields
-        assert "regular_field" in fields
-        assert "external_name" not in fields

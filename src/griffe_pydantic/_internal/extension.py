@@ -22,17 +22,14 @@ _logger = get_logger("griffe_pydantic")
 class PydanticExtension(Extension):
     """Griffe extension for Pydantic."""
 
-    def __init__(self, *, schema: bool = False, show_alias: bool = False) -> None:
+    def __init__(self, *, schema: bool = False) -> None:
         """Initialize the extension.
 
         Parameters:
             schema: Whether to compute and store the JSON schema of models.
-            show_alias: Whether to use `alias` as the field name in documentation.
-                When enabled, fields with a `alias` will be keyed by that alias instead of their Python attribute name.
         """
         super().__init__()
         self._schema = schema
-        self._show_alias = show_alias
         self._processed: set[str] = set()
         self._recorded: list[tuple[ObjectNode, Class]] = []
 
@@ -40,19 +37,8 @@ class PydanticExtension(Extension):
         """Detect models once the whole package is loaded."""
         for node, cls in self._recorded:
             self._processed.add(cls.canonical_path)
-            dynamic._process_class(
-                node.obj,
-                cls,
-                processed=self._processed,
-                schema=self._schema,
-                show_alias=self._show_alias,
-            )
-        static._process_module(
-            pkg,
-            processed=self._processed,
-            schema=self._schema,
-            show_alias=self._show_alias,
-        )
+            dynamic._process_class(node.obj, cls, processed=self._processed, schema=self._schema)
+        static._process_module(pkg, processed=self._processed, schema=self._schema)
 
     def on_class_instance(self, *, node: ast.AST | ObjectNode, cls: Class, **kwargs: Any) -> None:  # noqa: ARG002
         """Detect and prepare Pydantic models."""

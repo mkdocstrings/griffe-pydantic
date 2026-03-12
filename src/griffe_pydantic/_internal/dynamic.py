@@ -20,14 +20,7 @@ if TYPE_CHECKING:
 _logger = get_logger("griffe_pydantic")
 
 
-def _process_attribute(
-    obj: Any,
-    attr: Attribute,
-    cls: Class,
-    *,
-    processed: set[str],
-    show_alias: bool = False,
-) -> None:
+def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic fields."""
     from pydantic.fields import FieldInfo  # noqa: PLC0415
 
@@ -50,9 +43,10 @@ def _process_attribute(
     attr.extra[common._self_namespace]["constraints"] = constraints
 
     # Store alias if present
-    if show_alias and obj.alias:
-        attr.extra[common._self_namespace]["alias"] = obj.alias
-        attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_attribute_alias.html.jinja"
+    if obj.alias:
+        attr.extra[common._self_namespace]["validation_alias"] = obj.alias
+        attr.extra[common._self_namespace]["serialization_alias"] = obj.alias
+        attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (docstring := obj.description):
@@ -68,14 +62,7 @@ def _process_function(obj: Callable, func: Function, cls: Class, *, processed: s
         common._process_function(func, cls, dec_info.fields)
 
 
-def _process_class(
-    obj: type,
-    cls: Class,
-    *,
-    processed: set[str],
-    schema: bool = False,
-    show_alias: bool = False,
-) -> None:
+def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool = False) -> None:
     """Detect and prepare Pydantic models."""
     common._process_class(cls)
     if schema:
@@ -92,7 +79,6 @@ def _process_class(
                 member,  # ty: ignore[invalid-argument-type]
                 cls,
                 processed=processed,
-                show_alias=show_alias,
             )
         elif kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
@@ -108,10 +94,4 @@ def _process_class(
                     endlineno=0,
                 )
                 cls.members[field_name] = attr  # ty: ignore[invalid-assignment]
-                _process_attribute(
-                    field_info,
-                    attr,
-                    cls,
-                    processed=processed,
-                    show_alias=show_alias,
-                )
+                _process_attribute(field_info, attr, cls, processed=processed)
