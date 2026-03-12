@@ -41,12 +41,16 @@ def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[
         if (value := getattr(obj, constraint, None)) is not None:
             constraints[constraint] = value
     attr.extra[common._self_namespace]["constraints"] = constraints
+    attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
 
     # Store alias if present
     if obj.alias:
         attr.extra[common._self_namespace]["validation_alias"] = obj.alias
         attr.extra[common._self_namespace]["serialization_alias"] = obj.alias
-        attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
+    elif obj.validation_alias:
+        attr.extra[common._self_namespace]["validation_alias"] = obj.validation_alias
+    elif obj.serialization_alias:
+        attr.extra[common._self_namespace]["serialization_alias"] = obj.serialization_alias
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (docstring := obj.description):
