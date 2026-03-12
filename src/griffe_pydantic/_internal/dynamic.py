@@ -78,12 +78,7 @@ def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool =
     for member in cls.all_members.values():
         kind = member.kind
         if kind is Kind.ATTRIBUTE:
-            _process_attribute(
-                getattr(obj, member.name),
-                member,  # ty: ignore[invalid-argument-type]
-                cls,
-                processed=processed,
-            )
+            _process_attribute(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
 
