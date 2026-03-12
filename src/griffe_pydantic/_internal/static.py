@@ -268,9 +268,7 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
             _logger.debug(f"Could not import class {cls.path} for JSON schema")
             return
         try:
-            cls.extra[common._self_namespace]["schema"] = common._json_schema(
-                true_class,
-            )
+            cls.extra[common._self_namespace]["schema"] = common._json_schema(true_class)
         except Exception as exc:  # noqa: BLE001
             # Schema generation can fail and raise Pydantic errors.
             _logger.debug("Failed to generate schema for %s: %s", cls.path, exc)
@@ -285,7 +283,12 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
             _process_class(member, processed=processed, schema=schema)  # ty: ignore[invalid-argument-type]
 
 
-def _process_module(mod: Module, *, processed: set[str], schema: bool = False) -> None:
+def _process_module(
+    mod: Module,
+    *,
+    processed: set[str],
+    schema: bool = False,
+) -> None:
     """Handle Pydantic models in a module."""
     if mod.canonical_path in processed:
         return
