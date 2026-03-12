@@ -43,7 +43,7 @@ def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[
     attr.extra[common._self_namespace]["constraints"] = constraints
     attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
 
-    # Store alias if present
+    # Store validation/serialization aliases if defined.
     if obj.alias:
         attr.extra[common._self_namespace]["validation_alias"] = obj.alias
         attr.extra[common._self_namespace]["serialization_alias"] = obj.alias
