@@ -26,7 +26,7 @@ class ExampleModel(BaseModel):
     field_with_validation_alias: int = Field(validation_alias="validation_alias_field")
     """Shows the field with its validation alias."""
 
-    field_with_serialization_alias: int = Field(field_with_serialization_aliasalias="serialization_alias_field")
+    field_with_serialization_alias: int = Field(serialization_alias="serialization_alias_field")
     """Shows the field with its serialization alias."""
 
     @field_validator("field_with_validator_and_alias", "field_without_default", mode="before")
