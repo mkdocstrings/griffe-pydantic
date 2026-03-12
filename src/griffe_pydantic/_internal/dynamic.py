@@ -82,7 +82,7 @@ def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool =
         elif kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
 
-    # Process model fields that may not have been discovered by griffe
+    # Process model fields that may not have been discovered by Griffe.
     if hasattr(obj, "model_fields") and isinstance(obj.model_fields, dict):
         for field_name, field_info in obj.model_fields.items():
             if field_name not in cls.all_members:

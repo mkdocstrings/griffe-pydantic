@@ -203,7 +203,11 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     attr.labels.discard("instance-attribute")
 
     attr.value = kwargs.get("default")
-    constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description", "alias"}}
+    constraints = {
+        kwarg: value
+        for kwarg, value in kwargs.items()
+        if kwarg not in {"default", "description", "alias", "validation_alias", "serialization_alias"}
+    }
     attr.extra[common._self_namespace]["constraints"] = constraints
     attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
 
