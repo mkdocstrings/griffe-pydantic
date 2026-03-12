@@ -31,8 +31,16 @@
           {% for name, field in fields.items() %}
             <li>
               <code><autoref optional hover identifier="{{ field.path }}">{{ name }}</autoref></code>
-              {% if field.extra.griffe_pydantic.alias %}
-                (<code><em>{{ field.extra.griffe_pydantic.alias }}</em></code>)
+              {% if field.extra.griffe_pydantic.validation_alias or field.extra.griffe_pydantic.serialization_alias %}
+                (
+                  {%- if field.extra.griffe_pydantic.validation_alias -%}
+                    validation alias: <code>{{ field.extra.griffe_pydantic.validation_alias }}</code>
+                    {% if field.extra.griffe_pydantic.serialization_alias %}, {% endif %}
+                  {%- endif -%}
+                  {%- if field.extra.griffe_pydantic.serialization_alias -%}
+                    serialization alias: <code>{{ field.extra.griffe_pydantic.serialization_alias }}</code>
+                  {%- endif -%}
+                )
               {% endif %}
               {% with expression = field.annotation %}
                 (<code>{% include "expression.html.jinja" with context %}</code>)
