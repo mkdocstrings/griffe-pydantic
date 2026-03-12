@@ -116,7 +116,21 @@ def _pydantic_validator(func: Function) -> ExprCall | None:
     return None
 
 
-def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str], show_alias: bool = False) -> None:
+def _literal_or_debug(value: Expr | str | None, /, *, path: str) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        try:
+            return ast.literal_eval(value)
+        except ValueError:
+            return value
+    elif isinstance(value, (ExprName, Expr)):
+        _logger.debug(f"Could not resolve expression '{value}' as a literal for field {path}")
+        return None
+    return None
+
+
+def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic fields."""
     if attr.canonical_path in processed:
         return
@@ -215,19 +229,16 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str], show
     attr.value = kwargs.get("default")
     constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description", "alias"}}
     attr.extra[common._self_namespace]["constraints"] = constraints
+    attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
 
-    # Store alias if present
-    if show_alias and (alias := kwargs.get("alias")):
-        if isinstance(alias, str):
-            try:
-                attr.extra[common._self_namespace]["alias"] = ast.literal_eval(alias)
-            except ValueError:
-                attr.extra[common._self_namespace]["alias"] = alias
-            # Set the attribute template to the custom template, which will use the alias instead of the attribute name.
-            attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_attribute_alias.html.jinja"
-        elif isinstance(alias, (ExprName, Expr)):
-            # For now, we can't resolve expressions at static analysis time
-            _logger.debug(f"Could not resolve alias expression for field '{attr.path}'")
+    # Store validation/serialization aliases if defined.
+    if alias := _literal_or_debug(kwargs.get("alias"), path=attr.path):
+        attr.extra[common._self_namespace]["validation_alias"] = alias
+        attr.extra[common._self_namespace]["serialization_alias"] = alias
+    elif validation_alias := _literal_or_debug(kwargs.get("validation_alias"), path=attr.path):
+        attr.extra[common._self_namespace]["validation_alias"] = validation_alias
+    elif serialization_alias := _literal_or_debug(kwargs.get("serialization_alias"), path=attr.path):
+        attr.extra[common._self_namespace]["serialization_alias"] = serialization_alias
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (description_expr := kwargs.get("description")):
@@ -258,7 +269,6 @@ def _process_class(
     processed: set[str],
     declarations: dict[str, Attribute | None],
     schema: bool = False,
-    show_alias: bool = False,
 ) -> None:
     """Finalize the Pydantic model data."""
     if cls.canonical_path in processed:
@@ -310,11 +320,11 @@ def _process_class(
     for member in cls.all_members.values():
         kind = member.kind
         if kind is Kind.ATTRIBUTE:
-            _process_attribute(member, cls, processed=processed, show_alias=show_alias)  # ty: ignore[invalid-argument-type]
+            _process_attribute(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.FUNCTION:
             _process_function(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.CLASS:
-            _process_class(member, processed=processed, declarations=declarations, schema=schema, show_alias=show_alias)  # ty: ignore[invalid-argument-type]
+            _process_class(member, processed=processed, declarations=declarations, schema=schema)  # ty: ignore[invalid-argument-type]
 
 
 def _process_module(
@@ -323,7 +333,6 @@ def _process_module(
     processed: set[str],
     declarations: dict[str, Attribute | None],
     schema: bool = False,
-    show_alias: bool = False,
 ) -> None:
     """Handle Pydantic models in a module."""
     if mod.canonical_path in processed:
@@ -333,9 +342,9 @@ def _process_module(
     for cls in mod.classes.values():
         # Don't process aliases, real classes will be processed at some point anyway.
         if not cls.is_alias:
-            _process_class(cls, processed=processed, declarations=declarations, schema=schema, show_alias=show_alias)
+            _process_class(cls, processed=processed, declarations=declarations, schema=schema)
 
     for submodule in mod.modules.values():
         # Same for modules, don't process aliased ones.
         if not submodule.is_alias:
-            _process_module(submodule, processed=processed, declarations=declarations, schema=schema, show_alias=show_alias)
+            _process_module(submodule, processed=processed, declarations=declarations, schema=schema)

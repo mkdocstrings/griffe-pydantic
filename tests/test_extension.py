@@ -87,7 +87,7 @@ def test_extension(analysis: str) -> None:
     with loader(
         "package",
         modules={"__init__.py": code},
-        extensions=Extensions(PydanticExtension(schema=True, show_alias=True)),
+        extensions=Extensions(PydanticExtension(schema=True)),
         search_sys_path=analysis == "dynamic",
     ) as package:
         assert package
@@ -624,22 +624,3 @@ def test_typing_extensions_annotated_fields() -> None:
         # Constraints declared inside `Annotated` are collected too.
         assert package["Model.a"].extra["griffe_pydantic"]["constraints"] == {"le": "10"}
 
-
-def test_show_alias_disabled_static() -> None:
-    """Test that without show_alias, static analysis uses Python attribute names."""
-    code = """
-    from pydantic import BaseModel, Field
-
-    class Model(BaseModel):
-        internal_name: str = Field(default="test", alias="external_name")
-        regular_field: int = Field(default=42)
-    """
-    with temporary_visited_package(
-        "package",
-        modules={"__init__.py": code},
-        extensions=Extensions(PydanticExtension(schema=False, show_alias=False)),
-    ) as package:
-        fields = package["Model"].extra["griffe_pydantic"]["fields"]()
-        assert "internal_name" in fields
-        assert "regular_field" in fields
-        assert "external_name" not in fields
