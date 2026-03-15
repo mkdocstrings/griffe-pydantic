@@ -55,6 +55,10 @@ code = """
 
     class RegularClass(object):
         regular_attr = 1
+
+    class AliasClass(BaseModel):
+        internal_name: str = Field(default="test", alias="external_name")
+        regular_field: int = Field(default=42)
 """
 
 
@@ -81,6 +85,14 @@ def test_extension(analysis: str) -> None:
 
         schema = package.classes["ExampleModel"].extra["griffe_pydantic"]["schema"]
         assert schema.startswith('{\n  "description"')
+
+        assert "AliasClass" in package.classes
+        assert package.classes["AliasClass"].labels == {"pydantic-model"}
+
+        fields = package.classes["AliasClass"].extra["griffe_pydantic"]["fields"]()
+        assert "internal_name" in fields
+        assert "regular_field" in fields
+        assert "external_name" not in fields
 
 
 def test_imported_models() -> None:

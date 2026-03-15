@@ -41,6 +41,16 @@ def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[
         if (value := getattr(obj, constraint, None)) is not None:
             constraints[constraint] = value
     attr.extra[common._self_namespace]["constraints"] = constraints
+    attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
+
+    # Store validation/serialization aliases if defined.
+    if obj.alias:
+        attr.extra[common._self_namespace]["validation_alias"] = obj.alias
+        attr.extra[common._self_namespace]["serialization_alias"] = obj.alias
+    elif obj.validation_alias:
+        attr.extra[common._self_namespace]["validation_alias"] = obj.validation_alias
+    elif obj.serialization_alias:
+        attr.extra[common._self_namespace]["serialization_alias"] = obj.serialization_alias
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (docstring := obj.description):
@@ -71,3 +81,16 @@ def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool =
             _process_attribute(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
+
+    # Process model fields that may not have been discovered by Griffe.
+    if hasattr(obj, "model_fields") and isinstance(obj.model_fields, dict):
+        for field_name, field_info in obj.model_fields.items():
+            if field_name not in cls.all_members:
+                # Create an Attribute object for this field
+                attr = Attribute(
+                    name=field_name,
+                    lineno=0,
+                    endlineno=0,
+                )
+                cls.members[field_name] = attr  # ty: ignore[invalid-assignment]
+                _process_attribute(field_info, attr, cls, processed=processed)

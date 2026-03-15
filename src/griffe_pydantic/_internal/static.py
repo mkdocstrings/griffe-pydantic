@@ -96,6 +96,20 @@ def _pydantic_validator(func: Function) -> ExprCall | None:
     return None
 
 
+def _literal_or_debug(value: Expr | str | None, /, *, path: str) -> str | None:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        try:
+            return ast.literal_eval(value)
+        except ValueError:
+            return value
+    elif isinstance(value, (ExprName, Expr)):
+        _logger.debug(f"Could not resolve expression '{value}' as a literal for field {path}")
+        return None
+    return None
+
+
 def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic fields."""
     if attr.canonical_path in processed:
@@ -189,8 +203,22 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     attr.labels.discard("instance-attribute")
 
     attr.value = kwargs.get("default")
-    constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description"}}
+    constraints = {
+        kwarg: value
+        for kwarg, value in kwargs.items()
+        if kwarg not in {"default", "description", "alias", "validation_alias", "serialization_alias"}
+    }
     attr.extra[common._self_namespace]["constraints"] = constraints
+    attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
+
+    # Store validation/serialization aliases if defined.
+    if alias := _literal_or_debug(kwargs.get("alias"), path=attr.path):
+        attr.extra[common._self_namespace]["validation_alias"] = alias
+        attr.extra[common._self_namespace]["serialization_alias"] = alias
+    elif validation_alias := _literal_or_debug(kwargs.get("validation_alias"), path=attr.path):
+        attr.extra[common._self_namespace]["validation_alias"] = validation_alias
+    elif serialization_alias := _literal_or_debug(kwargs.get("serialization_alias"), path=attr.path):
+        attr.extra[common._self_namespace]["serialization_alias"] = serialization_alias
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (description_expr := kwargs.get("description")):
