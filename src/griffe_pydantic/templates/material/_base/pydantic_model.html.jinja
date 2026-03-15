@@ -33,13 +33,17 @@
               <code><autoref optional hover identifier="{{ field.path }}">{{ name }}</autoref></code>
               {% if field.extra.griffe_pydantic.validation_alias or field.extra.griffe_pydantic.serialization_alias %}
                 (
-                  {%- if field.extra.griffe_pydantic.validation_alias -%}
-                    validation alias: <code>{{ field.extra.griffe_pydantic.validation_alias }}</code>
-                    {% if field.extra.griffe_pydantic.serialization_alias %}, {% endif %}
-                  {%- endif -%}
-                  {%- if field.extra.griffe_pydantic.serialization_alias -%}
-                    serialization alias: <code>{{ field.extra.griffe_pydantic.serialization_alias }}</code>
-                  {%- endif -%}
+                  {% if field.extra.griffe_pydantic.validation_alias == field.extra.griffe_pydantic.serialization_alias %}
+                    alias: <code>{{ field.extra.griffe_pydantic.validation_alias }}</code>
+                  {% else %}
+                    {%- if field.extra.griffe_pydantic.validation_alias -%}
+                        validation alias: <code>{{ field.extra.griffe_pydantic.validation_alias }}</code>
+                        {% if field.extra.griffe_pydantic.serialization_alias %}, {% endif %}
+                    {%- endif -%}
+                    {%- if field.extra.griffe_pydantic.serialization_alias -%}
+                        serialization alias: <code>{{ field.extra.griffe_pydantic.serialization_alias }}</code>
+                    {%- endif -%}
+                  {% endif %}
                 )
               {% endif %}
               {% with expression = field.annotation %}

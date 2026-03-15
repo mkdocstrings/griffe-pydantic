@@ -3,11 +3,15 @@
 {% block contents scoped %}
   {% if attribute.extra.griffe_pydantic.validation_alias or attribute.extra.griffe_pydantic.serialization_alias %}
     <ul>
-      {% if attribute.extra.griffe_pydantic.validation_alias %}
-        <li>Input / Validation alias: <code>{{ attribute.extra.griffe_pydantic.validation_alias }}</code></li>
-      {% endif %}
-      {% if attribute.extra.griffe_pydantic.serialization_alias %}
-        <li>Output / Serialization alias: <code>{{ attribute.extra.griffe_pydantic.serialization_alias }}</code></li>
+      {% if attribute.extra.griffe_pydantic.validation_alias == attribute.extra.griffe_pydantic.serialization_alias %}
+        <li>Alias: <code>{{ attribute.extra.griffe_pydantic.validation_alias }}</code></li>
+      {% else %}
+        {% if attribute.extra.griffe_pydantic.validation_alias %}
+            <li>Input / Validation alias: <code>{{ attribute.extra.griffe_pydantic.validation_alias }}</code></li>
+        {% endif %}
+        {% if attribute.extra.griffe_pydantic.serialization_alias %}
+            <li>Output / Serialization alias: <code>{{ attribute.extra.griffe_pydantic.serialization_alias }}</code></li>
+        {% endif %}
       {% endif %}
     </ul>
   {% endif %}
