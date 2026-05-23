@@ -124,7 +124,7 @@ def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], sch
     if hasattr(obj, "model_fields") and isinstance(obj.model_fields, dict):
         for field_name, field_info in obj.model_fields.items():
             if field_name not in cls.all_members:
-                # Create an Attribute object for this field
+                # Create an Attribute object for this field.
                 attr = Attribute(
                     name=field_name,
                     lineno=0,
