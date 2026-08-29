@@ -408,8 +408,8 @@ def test_typing_extensions_annotated_fields() -> None:
         assert "pydantic-field" in package["Model.b"].labels
         assert package["Model.a"].docstring.value == "Some description."
         assert package["Model.b"].docstring.value == "Another description."
-        # the Annotated wrapper is unwrapped, leaving the actual type
+        # The `Annotated` wrapper is unwrapped, leaving the actual type.
         assert str(package["Model.a"].annotation) == "int"
         assert str(package["Model.b"].annotation) == "int"
-        # constraints declared inside Annotated are collected too
+        # Constraints declared inside `Annotated` are collected too.
         assert package["Model.a"].extra["griffe_pydantic"]["constraints"] == {"le": "10"}
