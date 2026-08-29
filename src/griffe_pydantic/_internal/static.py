@@ -30,6 +30,8 @@ if TYPE_CHECKING:
 
 _logger = get_logger("griffe_pydantic")
 
+_ANNOTATED_PATHS = {"typing.Annotated", "typing_extensions.Annotated"}
+
 
 def _extract_description(description: Expr | str) -> str | None:
     """Extract a description value from a Field argument.
@@ -122,7 +124,7 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     field_call = None
     if (
         isinstance(attr.annotation, ExprSubscript)
-        and attr.annotation.canonical_path == "typing.Annotated"
+        and attr.annotation.canonical_path in _ANNOTATED_PATHS
         and isinstance(attr.annotation.slice, ExprTuple)
     ):
         # Extract Field from Annotated's slice elements
