@@ -387,3 +387,29 @@ def test_field_description_with_annotated_and_dedent() -> None:
         assert package["Model.field1"].docstring is not None
         assert "This is a multiline description." in package["Model.field1"].docstring.value
         assert "With multiple lines." in package["Model.field1"].docstring.value
+
+
+def test_typing_extensions_annotated_fields() -> None:
+    """Test the extension with fields annotated through `typing_extensions`."""
+    code = """
+    from pydantic import BaseModel, Field
+    import typing_extensions as te
+
+    class Model(BaseModel):
+        a: te.Annotated[int, Field(description="Some description.", le=10)]
+        b: te.Annotated[int, Field(description="Another description.")] = 1
+    """
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension(schema=False)),
+    ) as package:
+        assert "pydantic-field" in package["Model.a"].labels
+        assert "pydantic-field" in package["Model.b"].labels
+        assert package["Model.a"].docstring.value == "Some description."
+        assert package["Model.b"].docstring.value == "Another description."
+        # The `Annotated` wrapper is unwrapped, leaving the actual type.
+        assert str(package["Model.a"].annotation) == "int"
+        assert str(package["Model.b"].annotation) == "int"
+        # Constraints declared inside `Annotated` are collected too.
+        assert package["Model.a"].extra["griffe_pydantic"]["constraints"] == {"le": "10"}
