@@ -7,6 +7,12 @@
         <loc>https://mkdocstrings.github.io/griffe-pydantic/changelog/</loc>
       </url>
       <url>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/code_of_conduct/</loc>
+      </url>
+      <url>
+        <loc>https://mkdocstrings.github.io/griffe-pydantic/contributing/</loc>
+      </url>
+      <url>
         <loc>https://mkdocstrings.github.io/griffe-pydantic/credits/</loc>
       </url>
       <url>
@@ -14,11 +20,5 @@
       </url>
       <url>
         <loc>https://mkdocstrings.github.io/griffe-pydantic/reference/api/</loc>
-      </url>
-      <url>
-        <loc>https://mkdocstrings.github.io/griffe-pydantic/contributing/</loc>
-      </url>
-      <url>
-        <loc>https://mkdocstrings.github.io/griffe-pydantic/code_of_conduct/</loc>
       </url>
 </urlset>
