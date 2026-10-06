@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 <!-- insertion marker -->
+## [1.3.2](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.3.2) - 2026-10-06
+
+<small>[Compare with 1.3.1](https://github.com/mkdocstrings/griffe-pydantic/compare/1.3.1...1.3.2)</small>
+
+### Build
+
+- Drop support for Python 3.10 ([68d824a](https://github.com/mkdocstrings/griffe-pydantic/commit/68d824a3e0e370cca1ecb72869bbb1531b169e30) by Timothée Mazzucotelli).
+
+### Bug Fixes
+
+- Support fields defined via `typing_extensions.Annotated` ([2c701f9](https://github.com/mkdocstrings/griffe-pydantic/commit/2c701f90d932ffb51f69fd48a8c2726c2b716c78) by Ilya Siamionau). [PR-58](https://github.com/mkdocstrings/griffe-pydantic/pull/58)
+
 ## [1.3.1](https://github.com/mkdocstrings/griffe-pydantic/releases/tag/1.3.1) - 2026-02-20
 
 <small>[Compare with 1.3.0](https://github.com/mkdocstrings/griffe-pydantic/compare/1.3.0...1.3.1)</small>
