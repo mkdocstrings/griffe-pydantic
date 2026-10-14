@@ -70,6 +70,12 @@ def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed
         if (value := getattr(obj, constraint, None)) is not None:
             constraints[constraint] = value
     attr.extra[common._self_namespace]["constraints"] = constraints
+    attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
+
+    # Pydantic has already applied the shared alias and direction-specific overrides.
+    for name in ("validation_alias", "serialization_alias"):
+        if (alias := getattr(obj, name)) is not None:
+            attr.extra[common._self_namespace][name] = alias
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (docstring := obj.description):
