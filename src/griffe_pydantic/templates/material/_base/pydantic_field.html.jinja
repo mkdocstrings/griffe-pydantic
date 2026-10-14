@@ -1,16 +1,18 @@
 {% extends "_base/attribute.html.jinja" %}
 
 {% block contents scoped %}
-  {% if attribute.extra.griffe_pydantic.validation_alias or attribute.extra.griffe_pydantic.serialization_alias %}
+  {% set validation_alias = attribute.extra.griffe_pydantic.get("validation_alias") %}
+  {% set serialization_alias = attribute.extra.griffe_pydantic.get("serialization_alias") %}
+  {% if validation_alias is not none or serialization_alias is not none %}
     <ul>
-      {% if attribute.extra.griffe_pydantic.validation_alias == attribute.extra.griffe_pydantic.serialization_alias %}
-        <li>Alias: <code>{{ attribute.extra.griffe_pydantic.validation_alias }}</code></li>
+      {% if validation_alias == serialization_alias %}
+        <li>Alias: <code>{{ validation_alias }}</code></li>
       {% else %}
-        {% if attribute.extra.griffe_pydantic.validation_alias %}
-            <li>Input / Validation alias: <code>{{ attribute.extra.griffe_pydantic.validation_alias }}</code></li>
+        {% if validation_alias is not none %}
+          <li>Input / Validation alias: <code>{{ validation_alias }}</code></li>
         {% endif %}
-        {% if attribute.extra.griffe_pydantic.serialization_alias %}
-            <li>Output / Serialization alias: <code>{{ attribute.extra.griffe_pydantic.serialization_alias }}</code></li>
+        {% if serialization_alias is not none %}
+          <li>Output / Serialization alias: <code>{{ serialization_alias }}</code></li>
         {% endif %}
       {% endif %}
     </ul>

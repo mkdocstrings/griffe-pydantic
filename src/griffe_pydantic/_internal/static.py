@@ -117,6 +117,7 @@ def _pydantic_validator(func: Function) -> ExprCall | None:
 
 
 def _literal_or_debug(value: Expr | str | None, /, *, path: str) -> str | None:
+    """Extract a literal alias and log expressions that cannot be resolved."""
     if value is None:
         return None
     if isinstance(value, str):
@@ -235,14 +236,13 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     attr.extra[common._self_namespace]["constraints"] = constraints
     attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
 
-    # Store validation/serialization aliases if defined.
-    if alias := _literal_or_debug(kwargs.get("alias"), path=attr.path):
-        attr.extra[common._self_namespace]["validation_alias"] = alias
-        attr.extra[common._self_namespace]["serialization_alias"] = alias
-    elif validation_alias := _literal_or_debug(kwargs.get("validation_alias"), path=attr.path):
-        attr.extra[common._self_namespace]["validation_alias"] = validation_alias
-    elif serialization_alias := _literal_or_debug(kwargs.get("serialization_alias"), path=attr.path):
-        attr.extra[common._self_namespace]["serialization_alias"] = serialization_alias
+    # Each direction-specific alias overrides the shared alias independently.
+    alias = _literal_or_debug(kwargs.get("alias"), path=attr.path)
+    for name in ("validation_alias", "serialization_alias"):
+        argument = kwargs.get(name)
+        value = alias if argument is None or argument == "None" else _literal_or_debug(argument, path=attr.path)
+        if value is not None:
+            attr.extra[common._self_namespace][name] = value
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (description_expr := kwargs.get("description")):
