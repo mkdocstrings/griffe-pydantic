@@ -116,6 +116,21 @@ def _pydantic_validator(func: Function) -> ExprCall | None:
     return None
 
 
+def _literal_or_debug(value: Expr | str | None, /, *, path: str) -> str | None:
+    """Extract a literal alias and log expressions that cannot be resolved."""
+    if value is None:
+        return None
+    if isinstance(value, str):
+        try:
+            return ast.literal_eval(value)
+        except ValueError:
+            return value
+    elif isinstance(value, (ExprName, Expr)):
+        _logger.debug(f"Could not resolve expression '{value}' as a literal for field {path}")
+        return None
+    return None
+
+
 def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic fields."""
     if attr.canonical_path in processed:
@@ -213,8 +228,21 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
     attr.labels.discard("instance-attribute")
 
     attr.value = kwargs.get("default")
-    constraints = {kwarg: value for kwarg, value in kwargs.items() if kwarg not in {"default", "description"}}
+    constraints = {
+        kwarg: value
+        for kwarg, value in kwargs.items()
+        if kwarg not in {"default", "description", "alias", "validation_alias", "serialization_alias"}
+    }
     attr.extra[common._self_namespace]["constraints"] = constraints
+    attr.extra[common._mkdocstrings_namespace]["template"] = "pydantic_field.html.jinja"
+
+    # Each direction-specific alias overrides the shared alias independently.
+    alias = _literal_or_debug(kwargs.get("alias"), path=attr.path)
+    for name in ("validation_alias", "serialization_alias"):
+        argument = kwargs.get(name)
+        value = alias if argument is None or argument == "None" else _literal_or_debug(argument, path=attr.path)
+        if value is not None:
+            attr.extra[common._self_namespace][name] = value
 
     # Populate docstring from the field's `description` argument.
     if not attr.docstring and (description_expr := kwargs.get("description")):

@@ -73,6 +73,10 @@ code = """
 
     class RegularClass(object):
         regular_attr = 1
+
+    class AliasClass(BaseModel):
+        internal_name: str = Field(default="test", alias="external_name")
+        regular_field: int = Field(default=42)
 """
 
 
@@ -109,6 +113,114 @@ def test_extension(analysis: str) -> None:
             "field_with_validator_and_alias",
             "field_with_constraints_and_description",
         }
+
+        # Aliases describe input and output without renaming Python attributes.
+        assert package.classes["AliasClass"].labels == {"pydantic-model"}
+        fields = package.classes["AliasClass"].extra["griffe_pydantic"]["fields"]()
+        assert set(fields) == {"internal_name", "regular_field"}
+
+
+@pytest.mark.parametrize("analysis", ["static", "dynamic"])
+@pytest.mark.parametrize("annotated", [False, True])
+@pytest.mark.parametrize("future_annotations", [False, True])
+@pytest.mark.parametrize(
+    ("field_arguments", "expected_aliases"),
+    [
+        ("", {}),
+        ('alias="external_name"', {"validation_alias": "external_name", "serialization_alias": "external_name"}),
+        ('validation_alias="input_name"', {"validation_alias": "input_name"}),
+        ('serialization_alias="output_name"', {"serialization_alias": "output_name"}),
+        ('validation_alias="input_name", serialization_alias="output_name"', {"validation_alias": "input_name", "serialization_alias": "output_name"}),
+        ('alias="external_name", validation_alias="input_name"', {"validation_alias": "input_name", "serialization_alias": "external_name"}),
+        ('alias="external_name", serialization_alias="output_name"', {"validation_alias": "external_name", "serialization_alias": "output_name"}),
+        ('alias="external_name", validation_alias="input_name", serialization_alias="output_name"', {"validation_alias": "input_name", "serialization_alias": "output_name"}),
+        ('alias="external_name", validation_alias=None, serialization_alias=None', {"validation_alias": "external_name", "serialization_alias": "external_name"}),
+        ('alias=""', {"validation_alias": "", "serialization_alias": ""}),
+    ],
+)
+def test_field_aliases(*, analysis: str, annotated: bool, future_annotations: bool, field_arguments: str, expected_aliases: dict[str, str], python_handler: PythonHandler) -> None:
+    """Collect and render effective aliases without changing Python field names."""
+    # Direction-specific aliases override the shared alias independently.
+    field_call = f'Field(default=1, description="The field description.", {field_arguments})'
+    field_definition = f"internal_name: Annotated[int, {field_call}]" if annotated else f"internal_name: int = {field_call}"
+    future_import = "from __future__ import annotations" if future_annotations else ""
+    code = f"""
+    {future_import}
+    from typing import Annotated
+    from pydantic import BaseModel, Field
+
+    class Model(BaseModel):
+        {field_definition}
+    """
+
+    loader = {"static": temporary_visited_package, "dynamic": temporary_inspected_package}[analysis]
+    with loader(
+        "field_aliases",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension()),
+        search_sys_path=analysis == "dynamic",
+    ) as package:
+        model = package["Model"]
+        fields = model.extra["griffe_pydantic"]["fields"]()
+        field = fields["internal_name"]
+        metadata = field.extra["griffe_pydantic"]
+
+        # Aliases are metadata, so Python names, types, defaults, and descriptions remain available.
+        assert set(fields) == {"internal_name"}
+        assert field.path == "field_aliases.Model.internal_name"
+        assert str(field.annotation) == "int"
+        assert field.value == "1"
+        assert field.docstring.value == "The field description."
+        assert {name: metadata[name] for name in ("validation_alias", "serialization_alias") if name in metadata} == expected_aliases
+        assert "alias" not in metadata["constraints"]
+        assert "validation_alias" not in metadata["constraints"]
+        assert "serialization_alias" not in metadata["constraints"]
+
+        # Both templates show one shared alias or the separate input and output aliases.
+        options = python_handler.get_options({})
+        for data, validation_label, serialization_label in (
+            (model, "validation alias", "serialization alias"),
+            (field, "input / validation alias", "output / serialization alias"),
+        ):
+            html = python_handler.render(data, options).lower()
+
+            if not expected_aliases:
+                assert "alias: <code>" not in html
+            elif len(expected_aliases) == 2 and expected_aliases["validation_alias"] == expected_aliases["serialization_alias"]:
+                assert f'alias: <code>{expected_aliases["validation_alias"]}</code>' in html
+                assert f"{validation_label}:" not in html
+                assert f"{serialization_label}:" not in html
+            else:
+                for name, label in (("validation_alias", validation_label), ("serialization_alias", serialization_label)):
+                    if name in expected_aliases:
+                        assert f"{label}: <code>{expected_aliases[name]}</code>" in html
+                    else:
+                        assert f"{label}:" not in html
+
+
+def test_unresolved_field_alias(caplog: pytest.LogCaptureFixture) -> None:
+    """Skip unresolved overrides instead of displaying an incorrect shared alias."""
+    code = """
+    from typing import Annotated
+    from pydantic import BaseModel, Field
+
+    input_alias = "input_name"
+
+    class Model(BaseModel):
+        field: Annotated[int, Field(alias="external_name", validation_alias=input_alias)]
+    """
+
+    with caplog.at_level(logging.DEBUG), temporary_visited_package(
+        "unresolved_alias",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension()),
+    ) as package:
+        metadata = package["Model.field"].extra["griffe_pydantic"]
+
+        # The known output alias remains available even when the input alias cannot be resolved.
+        assert "validation_alias" not in metadata
+        assert metadata["serialization_alias"] == "external_name"
+        assert "Could not resolve expression 'input_alias' as a literal for field unresolved_alias.Model.field" in caplog.text
 
 
 @pytest.mark.parametrize("analysis", ["static", "dynamic"])

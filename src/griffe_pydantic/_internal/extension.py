@@ -23,9 +23,12 @@ from typing import TYPE_CHECKING, Any
 
 from griffe import (
     Class,
+    ExprSubscript,
+    ExprTuple,
     Extension,
     Module,
     get_logger,
+    safe_get_expression,
 )
 
 from griffe_pydantic._internal import dynamic, static
@@ -78,6 +81,23 @@ class PydanticExtension(Extension):
         if not isinstance(node, ast.AST):
             return
         if agent.current.is_class:
+            # Griffe can parse strings in annotations as forward references. Annotated metadata
+            # contains Field arguments instead, so keep alias strings as literal values.
+            if (
+                isinstance(node, ast.AnnAssign)
+                and isinstance(node.annotation, ast.Subscript)
+                and isinstance(node.annotation.slice, ast.Tuple)
+                and isinstance(attr.annotation, ExprSubscript)
+                and attr.annotation.canonical_path in static._ANNOTATED_PATHS
+                and isinstance(attr.annotation.slice, ExprTuple)
+            ):
+                elements = list(attr.annotation.slice.elements)
+                for index, metadata in enumerate(node.annotation.slice.elts[1:], start=1):
+                    expression = safe_get_expression(metadata, parent=agent.current, parse_strings=False)
+                    if expression is not None:
+                        elements[index] = expression
+                attr.annotation.slice.elements = elements
+
             # An annotation copied from an earlier self assignment is not a class annotation.
             if (
                 isinstance(node, ast.Assign)
