@@ -22,6 +22,8 @@ import json
 from functools import partial
 from typing import TYPE_CHECKING
 
+from griffe import Kind
+
 if TYPE_CHECKING:
     from collections.abc import Sequence
 
@@ -47,11 +49,20 @@ _field_constraints = {
 
 
 def _model_fields(cls: Class) -> dict[str, Attribute]:
-    return {name: attr for name, attr in cls.all_members.items() if "pydantic-field" in attr.labels}  # ty: ignore[invalid-return-type]
+    # Checking the kind also skips unresolved aliases to Pydantic's internal hooks.
+    return {
+        name: attr
+        for name, attr in cls.all_members.items()
+        if attr.kind is Kind.ATTRIBUTE and "pydantic-field" in attr.labels
+    }  # ty: ignore[invalid-return-type]
 
 
 def _model_validators(cls: Class) -> dict[str, Function]:
-    return {name: func for name, func in cls.all_members.items() if "pydantic-validator" in func.labels}  # ty: ignore[invalid-return-type]
+    return {
+        name: func
+        for name, func in cls.all_members.items()
+        if func.kind is Kind.FUNCTION and "pydantic-validator" in func.labels
+    }  # ty: ignore[invalid-return-type]
 
 
 def _json_schema(model: type[BaseModel]) -> str:

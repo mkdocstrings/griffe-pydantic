@@ -31,7 +31,7 @@ from griffe import (
 from griffe_pydantic._internal import dynamic, static
 
 if TYPE_CHECKING:
-    from griffe import ObjectNode
+    from griffe import Attribute, Inspector, ObjectNode, Visitor
 
 
 _logger = get_logger("griffe_pydantic")
@@ -50,13 +50,45 @@ class PydanticExtension(Extension):
         self._schema = schema
         self._processed: set[str] = set()
         self._recorded: list[tuple[ObjectNode, Class]] = []
+        self._attribute_declarations: dict[str, Attribute | None] = {}
 
     def on_package(self, *, pkg: Module, **kwargs: Any) -> None:  # noqa: ARG002
         """Detect models once the whole package is loaded."""
-        for node, cls in self._recorded:
+        # Process bases first so inherited fields can remain aliases to their definitions.
+        for node, cls in sorted(self._recorded, key=lambda item: len(item[0].obj.__mro__)):
             self._processed.add(cls.canonical_path)
             dynamic._process_class(node.obj, cls, processed=self._processed, schema=self._schema)
-        static._process_module(pkg, processed=self._processed, schema=self._schema)
+
+        static._process_module(
+            pkg,
+            processed=self._processed,
+            declarations=self._attribute_declarations,
+            schema=self._schema,
+        )
+
+    def on_attribute_instance(
+        self,
+        *,
+        node: ast.AST | ObjectNode,
+        attr: Attribute,
+        agent: Visitor | Inspector,
+        **kwargs: Any,  # noqa: ARG002
+    ) -> None:
+        """Record whether static attributes are declared on a class or in its constructor."""
+        if not isinstance(node, ast.AST):
+            return
+        if agent.current.is_class:
+            # An annotation copied from an earlier self assignment is not a class annotation.
+            if (
+                isinstance(node, ast.Assign)
+                and attr.name != "model_config"
+                and self._attribute_declarations.get(attr.canonical_path, attr) is None
+            ):
+                return
+            self._attribute_declarations[attr.canonical_path] = attr
+        elif agent.current.is_function and agent.current.name == "__init__":
+            # Keep any class declaration that preceded the constructor assignment.
+            self._attribute_declarations.setdefault(attr.canonical_path, None)
 
     def on_class_instance(self, *, node: ast.AST | ObjectNode, cls: Class, **kwargs: Any) -> None:  # noqa: ARG002
         """Detect and prepare Pydantic models."""

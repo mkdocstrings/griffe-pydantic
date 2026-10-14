@@ -100,6 +100,186 @@ def test_extension(analysis: str) -> None:
         schema = package.classes["ExampleModel"].extra["griffe_pydantic"]["schema"]
         assert schema.startswith('{\n  "description"')
 
+        # Both analysis modes must collect fields, including inherited ones.
+        fields = package.classes["ExampleModel"].extra["griffe_pydantic"]["fields"]()
+        assert set(fields) == {
+            "parent_field",
+            "field_without_default",
+            "field_plain_with_validator",
+            "field_with_validator_and_alias",
+            "field_with_constraints_and_description",
+        }
+
+
+@pytest.mark.parametrize("analysis", ["static", "dynamic"])
+def test_collect_field_metadata(analysis: str, python_handler: PythonHandler) -> None:
+    """Collect field metadata that can be rendered by the model template."""
+    code = """
+    from pydantic import BaseModel, Field
+
+    class Model(BaseModel):
+        required: int
+        name: str = Field(default="example", description="The model's name.")
+        optional: str | None = None
+        items: list[int] = []
+    """
+
+    loader = {"static": temporary_visited_package, "dynamic": temporary_inspected_package}[analysis]
+    with loader(
+        "field_metadata",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension()),
+        search_sys_path=analysis == "dynamic",
+    ) as package:
+        model = package["Model"]
+        fields = model.extra["griffe_pydantic"]["fields"]()
+
+        # Required fields have no default; explicit defaults keep their Python representation.
+        assert set(fields) == {"required", "name", "optional", "items"}
+        assert fields["required"].value is None
+        assert fields["name"].value == "'example'"
+        assert fields["optional"].value == "None"
+        assert str(fields["items"].value) == "[]"
+
+        # Collected fields must retain their types, descriptions, and owning class.
+        assert str(fields["required"].annotation) == "int"
+        assert str(fields["name"].annotation) == "str"
+        assert str(fields["optional"].annotation) == "str | None"
+        assert str(fields["items"].annotation) == "list[int]"
+        assert fields["name"].docstring.value == "The model's name."
+        assert fields["name"].parent is model
+        assert fields["name"].path == "field_metadata.Model.name"
+
+        # The model template renders every field annotation.
+        python_handler.render(model, python_handler.get_options({}))
+
+
+@pytest.mark.parametrize("analysis", ["static", "dynamic"])
+def test_exclude_non_field_attributes(analysis: str) -> None:
+    """Keep ordinary attributes out of the model's field collection."""
+    code = """
+    from typing import ClassVar
+    from pydantic import BaseModel, ConfigDict, PrivateAttr
+
+    class Ignored:
+        pass
+
+    class Mixin:
+        inherited: int = 1
+        ignored = Ignored()
+
+        def __init__(self):
+            self.inherited_instance_only: int = 2
+
+    class Model(BaseModel, Mixin):
+        model_config = ConfigDict(extra="allow", ignored_types=(Ignored,))
+        field: str
+        class_variable: ClassVar[int] = 3
+        ignored = Ignored()
+        _private: str = PrivateAttr(default="secret")
+        _implicit_private: str = "secret"
+
+        def __init__(self, **data):
+            super().__init__(**data)
+            self.instance_only: int = 4
+            self.unannotated_instance = 5
+            self.ignored_after_init: int = 6
+
+        ignored_after_init = Ignored()
+
+        @property
+        def property_value(self) -> str:
+            return self.field
+    """
+
+    loader = {"static": temporary_visited_package, "dynamic": temporary_inspected_package}[analysis]
+    with loader(
+        "non_field_attributes",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension()),
+        search_sys_path=analysis == "dynamic",
+    ) as package:
+        # Annotated fields inherited from ordinary classes remain valid fields.
+        fields = package["Model"].extra["griffe_pydantic"]["fields"]()
+        assert set(fields) == {"field", "inherited"}
+
+        # Unannotated model configuration must still be collected separately.
+        assert package["Model"].extra["griffe_pydantic"]["config"]["extra"] == "allow"
+
+
+def test_class_fields_assigned_in_init() -> None:
+    """Assignments in constructors must not hide fields declared on the class."""
+    code = """
+    from pydantic import BaseModel
+
+    class Parent(BaseModel):
+        inherited: int
+
+    class Model(Parent):
+        before: int
+
+        def __init__(self, **data):
+            super().__init__(**data)
+            self.before = 1
+            self.after: int = 2
+            self.instance_only: int = 3
+            self.inherited = 4
+
+        after: int
+    """
+
+    with temporary_visited_package(
+        "package",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension()),
+    ) as package:
+        # Declaration order must not affect whether an attribute is a field.
+        fields = package["Model"].extra["griffe_pydantic"]["fields"]()
+        assert set(fields) == {"before", "after", "inherited"}
+
+        # Constructor assignments do not change defaults or the origin of inherited fields.
+        assert all(field.value is None for field in fields.values())
+        assert fields["inherited"].canonical_path == "package.Parent.inherited"
+
+
+@pytest.mark.parametrize("analysis", ["static", "dynamic"])
+def test_inherited_and_overridden_fields(analysis: str) -> None:
+    """Keep inherited fields and collect subclass overrides independently."""
+    code = """
+    from pydantic import BaseModel, Field
+
+    class Parent(BaseModel):
+        inherited: str = Field(default="parent", description="An inherited field.")
+        overridden: int = 1
+
+    class Child(Parent):
+        overridden: str = "child"
+        own: bool = False
+    """
+
+    loader = {"static": temporary_visited_package, "dynamic": temporary_inspected_package}[analysis]
+    with loader(
+        "field_inheritance",
+        modules={"__init__.py": code},
+        extensions=Extensions(PydanticExtension()),
+        search_sys_path=analysis == "dynamic",
+    ) as package:
+        parent_fields = package["Parent"].extra["griffe_pydantic"]["fields"]()
+        child_fields = package["Child"].extra["griffe_pydantic"]["fields"]()
+
+        # Inherited fields keep their defining class and description.
+        assert set(child_fields) == {"inherited", "overridden", "own"}
+        assert child_fields["inherited"].is_alias
+        assert child_fields["inherited"].canonical_path == "field_inheritance.Parent.inherited"
+        assert child_fields["inherited"].docstring.value == "An inherited field."
+
+        # An override must not change the parent model's field metadata.
+        assert child_fields["overridden"].canonical_path == "field_inheritance.Child.overridden"
+        assert str(child_fields["overridden"].annotation) == "str"
+        assert child_fields["overridden"].value == "'child'"
+        assert str(parent_fields["overridden"].annotation) == "int"
+        assert parent_fields["overridden"].value == "1"
+
 
 def test_imported_models() -> None:
     """Test the extension with imported models."""

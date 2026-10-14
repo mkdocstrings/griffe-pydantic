@@ -18,15 +18,19 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+import ast
+from inspect import formatannotation
+from typing import TYPE_CHECKING
 
 from griffe import (
+    Alias,
     Attribute,
     Class,
     Docstring,
     Function,
     Kind,
     get_logger,
+    safe_get_annotation,
 )
 
 from griffe_pydantic._internal import common
@@ -34,26 +38,33 @@ from griffe_pydantic._internal import common
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from pydantic import BaseModel
+    from pydantic.fields import FieldInfo
+
 
 _logger = get_logger("griffe_pydantic")
 
 
-def _process_attribute(obj: Any, attr: Attribute, cls: Class, *, processed: set[str]) -> None:
+def _process_attribute(obj: FieldInfo, attr: Attribute, cls: Class, *, processed: set[str]) -> None:
     """Handle Pydantic fields."""
-    from pydantic.fields import FieldInfo  # noqa: PLC0415
+    from pydantic_core import PydanticUndefined  # noqa: PLC0415
 
     if attr.canonical_path in processed:
         return
     processed.add(attr.canonical_path)
-    if attr.name == "model_config":
-        cls.extra[common._self_namespace]["config"] = obj
-        return
-
-    if not isinstance(obj, FieldInfo):
-        return
 
     attr.labels = {"pydantic-field"}
-    attr.value = obj.default
+    attr.value = None if obj.default is PydanticUndefined else repr(obj.default)
+
+    # Runtime annotations must become Griffe expressions before templates can render them.
+    annotation = formatannotation(obj.annotation)
+    try:
+        annotation_node = ast.parse(annotation, mode="eval").body
+    except SyntaxError:
+        attr.annotation = annotation
+    else:
+        attr.annotation = safe_get_annotation(annotation_node, parent=cls)
+
     constraints = {}
     for constraint in common._field_constraints:
         if (value := getattr(obj, constraint, None)) is not None:
@@ -74,18 +85,27 @@ def _process_function(obj: Callable, func: Function, cls: Class, *, processed: s
         common._process_function(func, cls, dec_info.fields)
 
 
-def _process_class(obj: type, cls: Class, *, processed: set[str], schema: bool = False) -> None:
+def _process_class(obj: type[BaseModel], cls: Class, *, processed: set[str], schema: bool = False) -> None:
     """Detect and prepare Pydantic models."""
     common._process_class(cls)
+    cls.extra[common._self_namespace]["config"] = obj.model_config
     if schema:
         try:
-            cls.extra[common._self_namespace]["schema"] = common._json_schema(obj)  # ty: ignore[invalid-argument-type]
+            cls.extra[common._self_namespace]["schema"] = common._json_schema(obj)
         except Exception as exc:  # noqa: BLE001
             # Schema generation can fail and raise Pydantic errors.
             _logger.debug("Failed to generate schema for %s: %s", cls.path, exc)
+
+    # Pydantic removes fields from the class namespace, so ordinary inspection misses them.
+    for name, field_info in obj.model_fields.items():
+        member = cls.all_members.get(name)
+        if member is None or member.kind is not Kind.ATTRIBUTE or (member.is_alias and name in obj.__annotations__):
+            member = Attribute(name=name, analysis="dynamic")
+            cls.set_member(name, member)
+        elif isinstance(member, Alias):
+            member = member.final_target
+        _process_attribute(field_info, member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
+
     for member in cls.all_members.values():
-        kind = member.kind
-        if kind is Kind.ATTRIBUTE:
-            _process_attribute(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
-        elif kind is Kind.FUNCTION:
+        if member.kind is Kind.FUNCTION:
             _process_function(getattr(obj, member.name), member, cls, processed=processed)  # ty: ignore[invalid-argument-type]

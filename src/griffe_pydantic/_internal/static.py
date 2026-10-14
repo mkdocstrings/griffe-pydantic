@@ -122,6 +122,10 @@ def _process_attribute(attr: Attribute, cls: Class, *, processed: set[str]) -> N
         return
     processed.add(attr.canonical_path)
 
+    # Model configuration is collected separately; fields need public names and annotations.
+    if attr.name != "model_config" and (attr.annotation is None or attr.name.startswith("_")):
+        return
+
     # Properties are not fields.
     if "property" in attr.labels:
         return
@@ -235,7 +239,13 @@ def _process_function(func: Function, cls: Class, *, processed: set[str]) -> Non
         common._process_function(func, cls, fields)
 
 
-def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> None:
+def _process_class(
+    cls: Class,
+    *,
+    processed: set[str],
+    declarations: dict[str, Attribute | None],
+    schema: bool = False,
+) -> None:
     """Finalize the Pydantic model data."""
     if cls.canonical_path in processed:
         return
@@ -244,6 +254,22 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
         return
 
     processed.add(cls.canonical_path)
+
+    # Griffe merges constructor assignments into class members. Restore class declarations
+    # so instance assignments neither create fields nor replace their types and defaults.
+    for name, member in list(cls.all_members.items()):
+        if member.kind is not Kind.ATTRIBUTE:
+            continue
+        declaration = declarations.get(member.canonical_path, member)
+        if declaration is None:
+            processed.add(member.canonical_path)
+            for base in cls.mro():
+                inherited = declarations.get(f"{base.path}.{name}")
+                if inherited is not None and inherited.annotation is not None:
+                    cls.set_member(name, Alias(name, inherited, parent=cls, inherited=True))
+                    break
+        elif declaration is not member and declaration.parent is not None:
+            declaration.parent.set_member(name, declaration)
 
     common._process_class(cls)
 
@@ -272,13 +298,14 @@ def _process_class(cls: Class, *, processed: set[str], schema: bool = False) -> 
         elif kind is Kind.FUNCTION:
             _process_function(member, cls, processed=processed)  # ty: ignore[invalid-argument-type]
         elif kind is Kind.CLASS:
-            _process_class(member, processed=processed, schema=schema)  # ty: ignore[invalid-argument-type]
+            _process_class(member, processed=processed, declarations=declarations, schema=schema)  # ty: ignore[invalid-argument-type]
 
 
 def _process_module(
     mod: Module,
     *,
     processed: set[str],
+    declarations: dict[str, Attribute | None],
     schema: bool = False,
 ) -> None:
     """Handle Pydantic models in a module."""
@@ -289,9 +316,9 @@ def _process_module(
     for cls in mod.classes.values():
         # Don't process aliases, real classes will be processed at some point anyway.
         if not cls.is_alias:
-            _process_class(cls, processed=processed, schema=schema)
+            _process_class(cls, processed=processed, declarations=declarations, schema=schema)
 
     for submodule in mod.modules.values():
         # Same for modules, don't process aliased ones.
         if not submodule.is_alias:
-            _process_module(submodule, processed=processed, schema=schema)
+            _process_module(submodule, processed=processed, declarations=declarations, schema=schema)
